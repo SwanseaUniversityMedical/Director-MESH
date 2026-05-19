@@ -1,0 +1,106 @@
+@model NetworkServiceCreateEditViewModel
+@{
+    ViewData["Title"] = "New Service";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-arrow-left-right me-2"></i>Create Network Service</div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label asp-for="Name" class="form-label fw-semibold"></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g. Postgres Inbound" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Enabled</label>
+                            <div class="form-check form-switch mt-1">
+                                <input asp-for="IsEnabled" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsEnabled" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="SiteId" class="form-label fw-semibold"></label>
+                            <select asp-for="SiteId" asp-items="Model.Sites" class="form-select">
+                                <option value="">— Select Site —</option>
+                            </select>
+                            <span asp-validation-for="SiteId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Direction" class="form-label fw-semibold"></label>
+                            <select asp-for="Direction" asp-items="Html.GetEnumSelectList<ServiceDirection>()" class="form-select" id="directionSelect"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Protocol" class="form-label fw-semibold"></label>
+                            <select asp-for="Protocol" asp-items="Html.GetEnumSelectList<ServiceProtocol>()" class="form-select"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Port" class="form-label fw-semibold"></label>
+                            <input asp-for="Port" class="form-control" type="number" min="1" max="65535" />
+                            <span asp-validation-for="Port" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdPeerName" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdPeerName" class="form-control" placeholder="e.g. oxford-postgres" />
+                            <div class="form-text">NetBird peer name for this service endpoint.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdDnsName" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdDnsName" class="form-control" placeholder="e.g. oxford-postgres.netbird.cloud" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdIpAddress" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdIpAddress" class="form-control" placeholder="e.g. 100.64.1.10" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="NetBirdSetupKey" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdSetupKey" class="form-control font-monospace" placeholder="e.g. 4A0A7684-86FD-4F6F-A315-4B92043A8D4A" />
+                            <div class="form-text">NetBird setup key used by this service peer to auto-register. Generate from the NetBird admin console.</div>
+                        </div>
+                        <div class="col-12" id="localEndpointRow">
+                            <label asp-for="LocalEndpoint" class="form-label fw-semibold">
+                                Local Endpoint <span class="badge bg-info text-dark">Inbound only</span>
+                            </label>
+                            <input asp-for="LocalEndpoint" class="form-control" placeholder="e.g. postgres-svc.default.svc.cluster.local:5432" />
+                            <div class="form-text">The internal K8s service address this inbound service proxies to.</div>
+                        </div>
+                        <div class="col-12" id="remoteEndpointRow">
+                            <label asp-for="RemoteNetBirdDnsName" class="form-label fw-semibold">
+                                Remote NetBird DNS <span class="badge bg-primary">Outbound only</span>
+                            </label>
+                            <input asp-for="RemoteNetBirdDnsName" class="form-control" placeholder="e.g. postgres-svc.netbird.cloud" />
+                            <div class="form-text">The NetBird DNS name of the destination inbound service.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Create</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        function updateEndpointVisibility() {
+            const dir = document.getElementById('directionSelect').value;
+            document.getElementById('localEndpointRow').style.display = dir === 'Inbound' ? '' : 'none';
+            document.getElementById('remoteEndpointRow').style.display = dir === 'Outbound' ? '' : 'none';
+        }
+        document.getElementById('directionSelect').addEventListener('change', updateEndpointVisibility);
+        updateEndpointVisibility();
+    </script>
+}

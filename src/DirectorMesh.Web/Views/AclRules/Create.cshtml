@@ -1,0 +1,68 @@
+@model AclRuleCreateEditViewModel
+@{
+    ViewData["Title"] = "New ACL Rule";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-shield-check me-2"></i>Create ACL Rule</div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label asp-for="Name" class="form-label fw-semibold"></label>
+                            <input asp-for="Name" class="form-control" placeholder="e.g. TRE1-to-Postgres" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Action" class="form-label fw-semibold"></label>
+                            <select asp-for="Action" asp-items="Html.GetEnumSelectList<AclAction>()" class="form-select"></select>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DataPlaneId" class="form-label fw-semibold"></label>
+                            <select asp-for="DataPlaneId" asp-items="Model.DataPlanes" class="form-select">
+                                <option value="">— Select Data Plane —</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Enabled</label>
+                            <div class="form-check form-switch mt-1">
+                                <input asp-for="IsEnabled" class="form-check-input" type="checkbox" role="switch" />
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="SourceServiceId" class="form-label fw-semibold"></label>
+                            <select asp-for="SourceServiceId" asp-items="Model.OutboundServices" class="form-select">
+                                <option value="">— Select Outbound Service (Source) —</option>
+                            </select>
+                            <span asp-validation-for="SourceServiceId" class="text-danger small"></span>
+                            <div class="form-text">The outbound service at the originating site.</div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DestinationServiceId" class="form-label fw-semibold"></label>
+                            <select asp-for="DestinationServiceId" asp-items="Model.InboundServices" class="form-select">
+                                <option value="">— Select Inbound Service (Destination) —</option>
+                            </select>
+                            <span asp-validation-for="DestinationServiceId" class="text-danger small"></span>
+                            <div class="form-text">The inbound service at the receiving site.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Create</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @await Html.PartialAsync("_ValidationScriptsPartial") }

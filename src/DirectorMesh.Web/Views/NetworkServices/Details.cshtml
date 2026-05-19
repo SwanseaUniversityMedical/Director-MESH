@@ -1,0 +1,100 @@
+@model NetworkService
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+@section TopbarActions {
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-info-circle me-2"></i>Service Details</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5">Site</dt>
+                    <dd class="col-7">
+                        <a asp-controller="Sites" asp-action="Details" asp-route-id="@Model.SiteId" class="text-decoration-none">@Model.Site.Name</a>
+                    </dd>
+                    <dt class="col-5">Data Planes</dt>
+                    <dd class="col-7 text-muted">@string.Join(", ", Model.Site.DataPlanes.Select(dp => dp.Name))</dd>
+                    <dt class="col-5">Direction</dt>
+                    <dd class="col-7">
+                        @if (Model.Direction == ServiceDirection.Inbound)
+                        { <span class="badge bg-info text-dark">Inbound</span> }
+                        else
+                        { <span class="badge bg-primary">Outbound</span> }
+                    </dd>
+                    <dt class="col-5">Protocol</dt><dd class="col-7">@Model.Protocol</dd>
+                    <dt class="col-5">Port</dt><dd class="col-7"><strong>@Model.Port</strong></dd>
+                    <dt class="col-5">NetBird Peer</dt><dd class="col-7"><code>@(Model.NetBirdPeerName ?? "—")</code></dd>
+                    <dt class="col-5">NetBird DNS</dt><dd class="col-7"><code>@(Model.NetBirdDnsName ?? "—")</code></dd>
+                    <dt class="col-5">NetBird IP</dt><dd class="col-7"><code>@(Model.NetBirdIpAddress ?? "—")</code></dd>
+                    <dt class="col-5">NetBird ID</dt><dd class="col-7"><code class="text-muted">@(Model.NetBirdPeerId ?? "—")</code></dd>
+                    <dt class="col-5">Setup Key</dt>
+                    <dd class="col-7">
+                        @if (Model.NetBirdSetupKey != null)
+                        { <code class="text-muted small">@Model.NetBirdSetupKey</code> }
+                        else
+                        { <span class="text-warning small"><i class="bi bi-exclamation-triangle me-1"></i>Not set — required for K8s deployment</span> }
+                    </dd>
+                    @if (Model.Direction == ServiceDirection.Inbound)
+                    {
+                        <dt class="col-5">Local Endpoint</dt>
+                        <dd class="col-7"><code>@(Model.LocalEndpoint ?? "—")</code></dd>
+                    }
+                    else
+                    {
+                        <dt class="col-5">Remote DNS</dt>
+                        <dd class="col-7"><code>@(Model.RemoteNetBirdDnsName ?? "—")</code></dd>
+                    }
+                    <dt class="col-5">Status</dt>
+                    <dd class="col-7">
+                        <span class="badge @(Model.IsEnabled ? "bg-success" : "bg-secondary")">
+                            @(Model.IsEnabled ? "Enabled" : "Disabled")
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-shield-check me-2"></i>Related ACL Rules</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr><th>Rule</th><th>Role</th><th>Other Side</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.SourceAclRules)
+                        {
+                            <tr>
+                                <td><a asp-controller="AclRules" asp-action="Details" asp-route-id="@r.Id" class="text-decoration-none">@r.Name</a></td>
+                                <td><span class="badge bg-primary">Source</span></td>
+                                <td>@r.DestinationService.Site.Name / @r.DestinationService.Name</td>
+                                <td><span class="badge @(r.Action == AclAction.Allow ? "bg-success" : "bg-danger")">@r.Action</span></td>
+                            </tr>
+                        }
+                        @foreach (var r in Model.DestinationAclRules)
+                        {
+                            <tr>
+                                <td><a asp-controller="AclRules" asp-action="Details" asp-route-id="@r.Id" class="text-decoration-none">@r.Name</a></td>
+                                <td><span class="badge bg-info text-dark">Destination</span></td>
+                                <td>@r.SourceService.Site.Name / @r.SourceService.Name</td>
+                                <td><span class="badge @(r.Action == AclAction.Allow ? "bg-success" : "bg-danger")">@r.Action</span></td>
+                            </tr>
+                        }
+                        @if (!Model.SourceAclRules.Any() && !Model.DestinationAclRules.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-3">No ACL rules reference this service.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

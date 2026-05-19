@@ -1,0 +1,105 @@
+@model DataPlane
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+@section TopbarActions {
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-info-circle me-2"></i>Details</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5">Name</dt><dd class="col-7">@Model.Name</dd>
+                    <dt class="col-5">Description</dt><dd class="col-7">@(Model.Description ?? "—")</dd>
+                    <dt class="col-5">NetBird ID</dt><dd class="col-7"><code>@(Model.NetBirdNetworkId ?? "—")</code></dd>
+                    <dt class="col-5">Created</dt><dd class="col-7">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold"><i class="bi bi-buildings me-2"></i>Sites (@Model.Sites.Count)</span>
+                <a asp-controller="Sites" asp-action="Create" asp-route-dataPlaneId="@Model.Id" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus"></i> Add Site
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr><th>Name</th><th>Services</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var site in Model.Sites.OrderBy(s => s.Name))
+                        {
+                            <tr>
+                                <td><a asp-controller="Sites" asp-action="Details" asp-route-id="@site.Id" class="text-decoration-none fw-semibold">@site.Name</a></td>
+                                <td>@site.Services.Count</td>
+                                <td>
+                                    @{
+                                        var badgeSite = site.Status switch {
+                                            SiteStatus.Active => "bg-success",
+                                            SiteStatus.Inactive => "bg-secondary",
+                                            SiteStatus.Error => "bg-danger",
+                                            _ => "bg-warning text-dark"
+                                        };
+                                    }
+                                    <span class="badge @badgeSite">@site.Status</span>
+                                </td>
+                                <td><a asp-controller="Sites" asp-action="Details" asp-route-id="@site.Id" class="btn btn-sm btn-outline-secondary py-0"><i class="bi bi-arrow-right"></i></a></td>
+                            </tr>
+                        }
+                        @if (!Model.Sites.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3">No sites in this data plane.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold"><i class="bi bi-shield-check me-2"></i>ACL Rules (@Model.AclRules.Count)</span>
+                <a asp-controller="AclRules" asp-action="Create" asp-route-dataPlaneId="@Model.Id" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-plus"></i> Add Rule
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr><th>Name</th><th>Source</th><th>Destination</th><th>Action</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rule in Model.AclRules.OrderBy(r => r.Name))
+                        {
+                            <tr>
+                                <td><a asp-controller="AclRules" asp-action="Details" asp-route-id="@rule.Id" class="text-decoration-none">@rule.Name</a></td>
+                                <td><span class="text-muted">@rule.SourceService.Site.Name /</span> @rule.SourceService.Name</td>
+                                <td><span class="text-muted">@rule.DestinationService.Site.Name /</span> @rule.DestinationService.Name</td>
+                                <td>
+                                    <span class="badge @(rule.Action == AclAction.Allow ? "bg-success" : "bg-danger")">@rule.Action</span>
+                                </td>
+                                <td>
+                                    <span class="badge @(rule.IsEnabled ? "bg-success" : "bg-secondary")">@(rule.IsEnabled ? "Enabled" : "Disabled")</span>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.AclRules.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3">No ACL rules for this data plane.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+@model Site
+@{
+    ViewData["Title"] = $"Delete — {Model.Name}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white fw-semibold">
+                <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+            </div>
+            <div class="card-body">
+                <p>Delete site <strong>@Model.Name</strong>@(Model.DataPlanes.Any() ? $" (data planes: {string.Join(", ", Model.DataPlanes.Select(dp => dp.Name))})" : "")?</p>
+                <div class="alert alert-warning small">
+                    All services and configurations for this site will be deleted.
+                </div>
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

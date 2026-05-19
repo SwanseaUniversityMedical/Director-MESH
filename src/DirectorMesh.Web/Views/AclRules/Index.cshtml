@@ -1,0 +1,75 @@
+@model IEnumerable<AclRule>
+@{
+    ViewData["Title"] = "ACL Rules";
+    var filterDpId = ViewBag.FilterDataPlaneId as int?;
+}
+
+@section TopbarActions {
+    <a asp-action="Create" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>New ACL Rule
+    </a>
+}
+
+@if (filterDpId.HasValue)
+{
+    <div class="alert alert-info d-flex align-items-center gap-2 mb-3 py-2">
+        <i class="bi bi-funnel-fill"></i>
+        Filtered by data plane
+        <a asp-action="Index" class="ms-2 btn btn-sm btn-outline-secondary py-0">Clear filter</a>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Data Plane</th>
+                    <th>Source (Outbound)</th>
+                    <th>Destination (Inbound)</th>
+                    <th>Protocol / Port</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rule in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <a asp-action="Details" asp-route-id="@rule.Id" class="text-decoration-none">@rule.Name</a>
+                        </td>
+                        <td class="text-muted small">@rule.DataPlane.Name</td>
+                        <td class="small">
+                            <span class="text-muted">@rule.SourceService.Site.Name</span> / @rule.SourceService.Name
+                        </td>
+                        <td class="small">
+                            <span class="text-muted">@rule.DestinationService.Site.Name</span> / @rule.DestinationService.Name
+                        </td>
+                        <td class="small">
+                            <code>@rule.DestinationService.Protocol:@rule.DestinationService.Port</code>
+                        </td>
+                        <td>
+                            <span class="badge @(rule.Action == AclAction.Allow ? "bg-success" : "bg-danger")">@rule.Action</span>
+                        </td>
+                        <td>
+                            <span class="badge @(rule.IsEnabled ? "bg-success" : "bg-secondary")">
+                                @(rule.IsEnabled ? "Enabled" : "Disabled")
+                            </span>
+                        </td>
+                        <td class="table-action-btns text-end">
+                            <a asp-action="Edit" asp-route-id="@rule.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                            <a asp-action="Delete" asp-route-id="@rule.Id" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No ACL rules found. <a asp-action="Create">Create one</a>.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

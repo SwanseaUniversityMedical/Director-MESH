@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-primary p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-primary fs-3"><i class="bi bi-layers"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold">@ViewBag.DataPlaneCount</div>
+                    <div class="text-muted small">Data Planes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-success p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-success fs-3"><i class="bi bi-buildings"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold">@ViewBag.SiteCount</div>
+                    <div class="text-muted small">Sites / TREs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-info p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-info fs-3"><i class="bi bi-arrow-left-right"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold">@ViewBag.ServiceCount</div>
+                    <div class="text-muted small">Network Services</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-warning p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-warning fs-3"><i class="bi bi-shield-check"></i></div>
+                <div>
+                    <div class="fs-2 fw-bold">@ViewBag.AclRuleCount</div>
+                    <div class="text-muted small">ACL Rules</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if ((int)ViewBag.PendingConfigurations > 0)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+        <i class="bi bi-hourglass-split fs-5"></i>
+        <div>
+            <strong>@ViewBag.PendingConfigurations</strong> site configuration(s) awaiting approval.
+            <a asp-controller="SiteConfigurations" asp-action="Index" class="alert-link ms-1">Review now →</a>
+        </div>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-activity me-2"></i>Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="DataPlanes" asp-action="Create" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>New Data Plane
+                    </a>
+                    <a asp-controller="Sites" asp-action="Create" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle me-1"></i>New Site
+                    </a>
+                    <a asp-controller="NetworkServices" asp-action="Create" class="btn btn-outline-info">
+                        <i class="bi bi-plus-circle me-1"></i>New Service
+                    </a>
+                    <a asp-controller="AclRules" asp-action="Create" class="btn btn-outline-warning">
+                        <i class="bi bi-plus-circle me-1"></i>New ACL Rule
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-info-circle me-2"></i>About Director-MESH
+            </div>
+            <div class="card-body text-muted">
+                <p>Director-MESH is the central control plane for managing site-to-site TRE connectivity over NetBird MESH.</p>
+                <ol class="mb-0">
+                    <li>Define <strong>Data Planes</strong> as logical network segments</li>
+                    <li>Register <strong>Sites / TREs</strong> and assign them to a data plane</li>
+                    <li>Define <strong>Services</strong> (inbound or outbound) for each site</li>
+                    <li>Create <strong>ACL Rules</strong> controlling which outbound services can reach which inbound services</li>
+                    <li>Generate and send <strong>Site Configurations</strong> (HAProxy + K8s manifests) for local approval and deployment</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>

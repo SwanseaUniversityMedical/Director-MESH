@@ -1,0 +1,67 @@
+@model IEnumerable<SiteConfiguration>
+@{
+    ViewData["Title"] = "Site Configurations";
+    var filterSiteId = ViewBag.FilterSiteId as int?;
+}
+
+@if (filterSiteId.HasValue)
+{
+    <div class="alert alert-info d-flex align-items-center gap-2 mb-3 py-2">
+        <i class="bi bi-funnel-fill"></i>
+        Filtered by site
+        <a asp-action="Index" class="ms-2 btn btn-sm btn-outline-secondary py-0">Clear filter</a>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Site</th>
+                    <th>Data Plane</th>
+                    <th class="text-center">Ver.</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Sent</th>
+                    <th>Approved</th>
+                    <th>Applied</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cfg in Model)
+                {
+                    var badge = cfg.Status switch {
+                        ConfigurationStatus.Applied => "bg-success",
+                        ConfigurationStatus.Approved => "bg-info text-dark",
+                        ConfigurationStatus.Sent => "bg-warning text-dark",
+                        ConfigurationStatus.Rejected => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+                    <tr>
+                        <td class="fw-semibold">
+                            <a asp-controller="Sites" asp-action="Details" asp-route-id="@cfg.SiteId" class="text-decoration-none">@cfg.Site.Name</a>
+                        </td>
+                        <td class="text-muted small">@string.Join(", ", cfg.Site.DataPlanes.Select(dp => dp.Name))</td>
+                        <td class="text-center"><span class="badge bg-dark">v@(cfg.Version)</span></td>
+                        <td><span class="badge @badge">@cfg.Status</span></td>
+                        <td class="small text-muted">@cfg.CreatedAt.ToString("MM-dd HH:mm")</td>
+                        <td class="small text-muted">@(cfg.SentAt?.ToString("MM-dd HH:mm") ?? "—")</td>
+                        <td class="small text-muted">@(cfg.ApprovedAt?.ToString("MM-dd HH:mm") ?? "—")</td>
+                        <td class="small text-muted">@(cfg.AppliedAt?.ToString("MM-dd HH:mm") ?? "—")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@cfg.Id" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">No configurations yet. Go to a site and click "Generate Config".</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,81 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: director_mesh
+      POSTGRES_USER: director_mesh
+      POSTGRES_PASSWORD: director_mesh_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U director_mesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    # start-dev enables the admin console; --import-realm auto-imports on first boot
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: director_mesh
+      KC_DB_PASSWORD: director_mesh_pass
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Fix the public hostname so token issuers always say localhost:8080
+      # regardless of which container made the request.
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./keycloak/director-mesh-realm.json:/opt/keycloak/data/import/director-mesh-realm.json:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # curl/wget are not in the UBI9-micro image; use bash's built-in TCP device
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  web:
+    build:
+      context: .
+      dockerfile: src/DirectorMesh.Web/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Database=director_mesh;
+        Username=director_mesh;Password=director_mesh_pass
+      Keycloak__Authority: http://localhost:8080/realms/director-mesh
+      # InternalAuthority routes backchannel calls through the Docker service name
+      # so the container can reach Keycloak without going via the host's localhost.
+      Keycloak__InternalAuthority: http://keycloak:8080
+      Keycloak__ClientId: director-mesh-web
+      Keycloak__ClientSecret: director-mesh-secret
+      NetBird__ApiBase: https://api.netbird.io/api
+      NetBird__ApiToken: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

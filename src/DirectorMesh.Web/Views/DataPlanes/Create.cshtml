@@ -1,0 +1,40 @@
+@model DataPlane
+@{
+    ViewData["Title"] = "New Data Plane";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-layers me-2"></i>Create Data Plane
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Production Mesh" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="NetBirdNetworkId" class="form-label fw-semibold">NetBird Network ID <span class="text-muted fw-normal">(optional)</span></label>
+                        <input asp-for="NetBirdNetworkId" class="form-control" placeholder="NetBird network identifier" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Create</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @await Html.PartialAsync("_ValidationScriptsPartial") }

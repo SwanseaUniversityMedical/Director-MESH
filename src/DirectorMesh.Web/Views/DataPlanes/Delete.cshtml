@@ -1,0 +1,32 @@
+@model DataPlane
+@{
+    ViewData["Title"] = $"Delete — {Model.Name}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white fw-semibold">
+                <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+            </div>
+            <div class="card-body">
+                <p>Are you sure you want to delete data plane <strong>@Model.Name</strong>?</p>
+                @if (Model.Sites.Any())
+                {
+                    <div class="alert alert-warning small">
+                        This data plane has <strong>@Model.Sites.Count</strong> site(s). You must remove them first.
+                    </div>
+                }
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger" @(Model.Sites.Any() ? "disabled" : "")>
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
