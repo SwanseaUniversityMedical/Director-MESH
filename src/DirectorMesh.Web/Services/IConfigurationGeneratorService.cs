@@ -4,5 +4,5 @@ namespace DirectorMesh.Web.Services;
 
 public interface IConfigurationGeneratorService
 {
-    Task<SiteConfiguration> GenerateAsync(Site site, IEnumerable<AclRule> applicableRules, CancellationToken ct = default);
+    Task<SiteConfiguration> GenerateAsync(Site site, DataPlane dataPlane, IEnumerable<AclRule> dataPlaneRules, CancellationToken ct = default);
 }

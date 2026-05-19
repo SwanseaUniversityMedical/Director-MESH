@@ -16,11 +16,12 @@ public class SiteConfigurationsController(ApplicationDbContext db, IConfiguratio
     public async Task<IActionResult> Index(int? siteId)
     {
         var query = db.SiteConfigurations
-            .Include(c => c.Site).ThenInclude(s => s.DataPlanes)
+            .Include(c => c.Site)
+            .Include(c => c.DataPlane)
             .AsQueryable();
         if (siteId.HasValue)
             query = query.Where(c => c.SiteId == siteId.Value);
-        ViewBag.Sites = await db.Sites.Include(s => s.DataPlanes).OrderBy(s => s.Name).ToListAsync();
+        ViewBag.Sites = await db.Sites.OrderBy(s => s.Name).ToListAsync();
         ViewBag.FilterSiteId = siteId;
         return View(await query.OrderByDescending(c => c.CreatedAt).ToListAsync());
     }
@@ -28,7 +29,8 @@ public class SiteConfigurationsController(ApplicationDbContext db, IConfiguratio
     public async Task<IActionResult> Details(int id)
     {
         var config = await db.SiteConfigurations
-            .Include(c => c.Site).ThenInclude(s => s.DataPlanes)
+            .Include(c => c.Site)
+            .Include(c => c.DataPlane)
             .FirstOrDefaultAsync(c => c.Id == id);
         if (config == null) return NotFound();
         return View(config);
@@ -43,25 +45,53 @@ public class SiteConfigurationsController(ApplicationDbContext db, IConfiguratio
             .FirstOrDefaultAsync(s => s.Id == siteId);
         if (site == null) return NotFound();
 
-        var dataPlaneIds = site.DataPlanes.Select(dp => dp.Id).ToList();
-        var rules = await db.AclRules
-            .Include(r => r.SourceService).ThenInclude(s => s.Site)
-            .Include(r => r.DestinationService).ThenInclude(s => s.Site)
-            .Where(r => dataPlaneIds.Contains(r.DataPlaneId) && r.IsEnabled &&
-                        (r.SourceService.SiteId == siteId || r.DestinationService.SiteId == siteId))
-            .ToListAsync();
+        if (!site.DataPlanes.Any())
+        {
+            TempData["Error"] = "Site has no data planes assigned — cannot generate configuration.";
+            return RedirectToAction("Details", "Sites", new { id = siteId });
+        }
 
-        var lastVersion = await db.SiteConfigurations
-            .Where(c => c.SiteId == siteId)
-            .MaxAsync(c => (int?)c.Version) ?? 0;
+        int generated = 0, skipped = 0;
 
-        var config = await generator.GenerateAsync(site, rules);
-        config.Version = lastVersion + 1;
-        db.SiteConfigurations.Add(config);
+        foreach (var dataPlane in site.DataPlanes)
+        {
+            var dataPlaneRules = await db.AclRules
+                .Include(r => r.SourceService).ThenInclude(s => s.Site)
+                .Include(r => r.DestinationService).ThenInclude(s => s.Site)
+                .Where(r => r.DataPlaneId == dataPlane.Id && r.IsEnabled &&
+                            (r.SourceService.SiteId == siteId || r.DestinationService.SiteId == siteId))
+                .ToListAsync();
+
+            var candidate = await generator.GenerateAsync(site, dataPlane, dataPlaneRules);
+
+            var lastConfig = await db.SiteConfigurations
+                .Where(c => c.SiteId == siteId && c.DataPlaneId == dataPlane.Id)
+                .OrderByDescending(c => c.Version)
+                .FirstOrDefaultAsync();
+
+            if (lastConfig?.ContentHash == candidate.ContentHash)
+            {
+                skipped++;
+                continue;
+            }
+
+            var lastVersion = lastConfig?.Version ?? 0;
+            candidate.Version = lastVersion + 1;
+            candidate.Status = ConfigurationStatus.Sent;
+            candidate.SentAt = DateTime.UtcNow;
+            db.SiteConfigurations.Add(candidate);
+            generated++;
+        }
+
         await db.SaveChangesAsync();
 
-        TempData["Success"] = $"Configuration v{config.Version} generated for site '{site.Name}'.";
-        return RedirectToAction(nameof(Details), new { id = config.Id });
+        if (generated == 0)
+            TempData["Info"] = $"No changes detected — all {skipped} data plane configuration(s) are up to date.";
+        else
+            TempData["Success"] = $"Generated and sent {generated} new configuration(s) for '{site.Name}'" +
+                                  (skipped > 0 ? $" ({skipped} unchanged)" : "") + ". The Site Agent will see them on its next poll.";
+
+        return RedirectToAction(nameof(Index), new { siteId });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -77,7 +107,7 @@ public class SiteConfigurationsController(ApplicationDbContext db, IConfiguratio
         config.Status = ConfigurationStatus.Sent;
         config.SentAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
-        TempData["Success"] = $"Configuration v{config.Version} marked as Sent. Approval token: {config.ApprovalToken}";
+        TempData["Success"] = $"Configuration v{config.Version} marked as Sent.";
         return RedirectToAction(nameof(Details), new { id });
     }
 
@@ -124,9 +154,13 @@ public class SiteConfigurationsController(ApplicationDbContext db, IConfiguratio
 
     public async Task<IActionResult> DownloadK8s(int id)
     {
-        var config = await db.SiteConfigurations.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
+        var config = await db.SiteConfigurations
+            .Include(c => c.Site)
+            .Include(c => c.DataPlane)
+            .FirstOrDefaultAsync(c => c.Id == id);
         if (config == null || config.K8sManifestYaml == null) return NotFound();
+        var dpSlug = config.DataPlane != null ? $"-{SanitizeName(config.DataPlane.Name)}" : "";
         var bytes = System.Text.Encoding.UTF8.GetBytes(config.K8sManifestYaml);
-        return File(bytes, "application/yaml", $"k8s-{SanitizeName(config.Site.Name)}-v{config.Version}.yaml");
+        return File(bytes, "application/yaml", $"k8s-{SanitizeName(config.Site.Name)}{dpSlug}-v{config.Version}.yaml");
     }
 }

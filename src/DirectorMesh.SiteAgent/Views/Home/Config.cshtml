@@ -1,0 +1,119 @@
+@model DataPlaneConfigResponse
+@{
+    ViewData["Title"] = $"Review — {Model.DataPlane}";
+    var pending = Model.Pending!;
+    var prevJson = Model.LastApplied?.ConfigurationJson ?? "";
+    var newJson = pending.ConfigurationJson ?? "";
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+}
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-auto">
+        <div class="card text-center px-4 py-2">
+            <small class="text-muted">Data Plane</small>
+            <strong>@Model.DataPlane</strong>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card text-center px-4 py-2">
+            <small class="text-muted">Pending Version</small>
+            <strong>v@(pending.Version)</strong>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card text-center px-4 py-2">
+            <small class="text-muted">Base Version</small>
+            <strong>@(Model.LastApplied != null ? $"v{Model.LastApplied.Version}" : "New")</strong>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card text-center px-4 py-2">
+            <small class="text-muted">Sent</small>
+            <strong>@pending.SentAt?.ToString("yyyy-MM-dd HH:mm")</strong>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header bg-white fw-semibold">
+        <i class="bi bi-file-diff me-2"></i>Configuration Changes
+        <small class="text-muted fw-normal ms-2">
+            @(Model.LastApplied == null ? "New configuration (no previous version applied)" : $"v{Model.LastApplied.Version} → v{pending.Version}")
+        </small>
+    </div>
+    <div class="card-body p-0">
+        <div id="diff-container" style="font-size: 0.8rem;"></div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-send me-2"></i>Decision</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <form asp-action="Approve" method="post">
+                    <input type="hidden" name="configId" value="@pending.Id" />
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Notes (optional)</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="2"
+                                  placeholder="Any notes about this approval..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i>Approve
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <form asp-action="Reject" method="post">
+                    <input type="hidden" name="configId" value="@pending.Id" />
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control form-control-sm" rows="2" required
+                                  placeholder="Why is this configuration being rejected?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/diff/dist/diff.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui-base.min.js"></script>
+    <script>
+        (function () {
+            const prev = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(prevJson));
+            const next = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(newJson));
+
+            const patch = Diff.createTwoFilesPatch(
+                'configuration.json (applied)',
+                'configuration.json (pending)',
+                prev, next,
+                '', '',
+                { context: 5 }
+            );
+
+            const targetEl = document.getElementById('diff-container');
+            const configuration = {
+                drawFileList: false,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+                highlight: true
+            };
+            const diff2htmlUi = new Diff2HtmlUI(targetEl, patch, configuration);
+            diff2htmlUi.draw();
+        })();
+    </script>
+}

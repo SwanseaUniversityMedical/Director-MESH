@@ -52,6 +52,7 @@ public class SitesController(ApplicationDbContext db) : Controller
             Name = vm.Name,
             Description = vm.Description,
             Status = vm.Status,
+            ApiKey = vm.ApiKey,
             CreatedAt = DateTime.UtcNow
         };
         if (vm.DataPlaneIds.Count > 0)
@@ -71,6 +72,7 @@ public class SitesController(ApplicationDbContext db) : Controller
             Id = site.Id,
             Name = site.Name,
             Description = site.Description,
+            ApiKey = site.ApiKey,
             DataPlaneIds = site.DataPlanes.Select(dp => dp.Id).ToList(),
             Status = site.Status
         };
@@ -87,6 +89,7 @@ public class SitesController(ApplicationDbContext db) : Controller
         if (site == null) return NotFound();
         site.Name = vm.Name;
         site.Description = vm.Description;
+        site.ApiKey = vm.ApiKey;
         site.Status = vm.Status;
         var newDataPlanes = await db.DataPlanes.Where(dp => vm.DataPlaneIds.Contains(dp.Id)).ToListAsync();
         site.DataPlanes.Clear();

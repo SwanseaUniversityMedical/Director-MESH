@@ -5,8 +5,11 @@ public class SiteConfiguration
     public int Id { get; set; }
     public int SiteId { get; set; }
     public Site Site { get; set; } = null!;
+    public int? DataPlaneId { get; set; }
+    public DataPlane? DataPlane { get; set; }
     public int Version { get; set; }
     public ConfigurationStatus Status { get; set; } = ConfigurationStatus.Draft;
+    public string? ContentHash { get; set; }
     public string? ConfigurationJson { get; set; }
     public string? HaProxyConfig { get; set; }
     public string? K8sManifestYaml { get; set; }

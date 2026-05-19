@@ -17,6 +17,10 @@ public class SiteCreateEditViewModel
     [Display(Name = "Data Planes")]
     public List<int> DataPlaneIds { get; set; } = new();
 
+    [MaxLength(200)]
+    [Display(Name = "Site Agent API Key")]
+    public string? ApiKey { get; set; }
+
     public SiteStatus Status { get; set; } = SiteStatus.Provisioning;
 
     public IEnumerable<SelectListItem> DataPlanes { get; set; } = Enumerable.Empty<SelectListItem>();

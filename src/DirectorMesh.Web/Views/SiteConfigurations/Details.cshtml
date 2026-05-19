@@ -1,6 +1,6 @@
 @model SiteConfiguration
 @{
-    ViewData["Title"] = $"{Model.Site.Name} — Config v{Model.Version}";
+    ViewData["Title"] = $"{Model.Site.Name} — {Model.DataPlane?.Name ?? "Config"} v{Model.Version}";
     var badge = Model.Status switch {
         ConfigurationStatus.Applied => "bg-success",
         ConfigurationStatus.Approved => "bg-info text-dark",
@@ -60,8 +60,8 @@
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <div class="text-muted small">Data Planes</div>
-            <div class="fw-semibold text-muted small mt-1">@string.Join(", ", Model.Site.DataPlanes.Select(dp => dp.Name))</div>
+            <div class="text-muted small">Data Plane</div>
+            <div class="fw-semibold text-muted small mt-1">@(Model.DataPlane?.Name ?? "—")</div>
         </div>
     </div>
 </div>

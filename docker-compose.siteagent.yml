@@ -1,0 +1,24 @@
+# Standalone compose for a TRE site agent deployment.
+# Copy this file to your site and configure the environment variables below,
+# or supply them via a .env file alongside this compose file.
+#
+# Required:
+#   DIRECTOR_MESH_URL   - Base URL of the Director-MESH web app
+#   DIRECTOR_MESH_SITE  - Numeric site ID assigned in Director-MESH
+#   DIRECTOR_MESH_KEY   - API key from the site's Edit page in Director-MESH
+
+services:
+
+  site-agent:
+    build:
+      context: .
+      dockerfile: src/DirectorMesh.SiteAgent/Dockerfile
+    ports:
+      - "${SITE_AGENT_PORT:-5100}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      DirectorMesh__BaseUrl: ${DIRECTOR_MESH_URL:-https://director-mesh.example.com}
+      DirectorMesh__SiteId: ${DIRECTOR_MESH_SITE:-0}
+      DirectorMesh__ApiKey: ${DIRECTOR_MESH_KEY:-}
+    restart: unless-stopped

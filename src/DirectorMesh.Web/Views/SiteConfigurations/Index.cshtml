@@ -43,7 +43,7 @@
                         <td class="fw-semibold">
                             <a asp-controller="Sites" asp-action="Details" asp-route-id="@cfg.SiteId" class="text-decoration-none">@cfg.Site.Name</a>
                         </td>
-                        <td class="text-muted small">@string.Join(", ", cfg.Site.DataPlanes.Select(dp => dp.Name))</td>
+                        <td class="text-muted small">@(cfg.DataPlane?.Name ?? "—")</td>
                         <td class="text-center"><span class="badge bg-dark">v@(cfg.Version)</span></td>
                         <td><span class="badge @badge">@cfg.Status</span></td>
                         <td class="small text-muted">@cfg.CreatedAt.ToString("MM-dd HH:mm")</td>

@@ -30,6 +30,14 @@
                             <select asp-for="DataPlaneIds" asp-items="Model.DataPlanes" class="form-select" multiple size="4"></select>
                             <div class="form-text">Hold Ctrl / Cmd to select multiple data planes.</div>
                         </div>
+                        <div class="col-12">
+                            <label asp-for="ApiKey" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <input asp-for="ApiKey" class="form-control font-monospace" id="apiKeyInput" />
+                                <button type="button" class="btn btn-outline-secondary" onclick="generateApiKey()">Generate</button>
+                            </div>
+                            <div class="form-text">Used by the Site Agent to authenticate. Keep this secret.</div>
+                        </div>
                     </div>
 
                     <div class="d-flex gap-2 mt-4">
@@ -42,4 +50,13 @@
     </div>
 </div>
 
-@section Scripts { @await Html.PartialAsync("_ValidationScriptsPartial") }
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        function generateApiKey() {
+            const arr = new Uint8Array(24);
+            crypto.getRandomValues(arr);
+            document.getElementById('apiKeyInput').value = Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+        }
+    </script>
+}

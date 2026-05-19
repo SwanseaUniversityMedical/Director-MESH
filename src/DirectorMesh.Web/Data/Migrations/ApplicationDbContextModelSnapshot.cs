@@ -164,6 +164,9 @@ namespace DirectorMesh.Web.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApiKey")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -202,8 +205,14 @@ namespace DirectorMesh.Web.Data.Migrations
                     b.Property<string>("ConfigurationJson")
                         .HasColumnType("text");
 
+                    b.Property<string>("ContentHash")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DataPlaneId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("HaProxyConfig")
                         .HasColumnType("text");
@@ -230,6 +239,8 @@ namespace DirectorMesh.Web.Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DataPlaneId");
 
                     b.HasIndex("SiteId");
 
@@ -291,11 +302,17 @@ namespace DirectorMesh.Web.Data.Migrations
 
             modelBuilder.Entity("DirectorMesh.Web.Models.Domain.SiteConfiguration", b =>
                 {
+                    b.HasOne("DirectorMesh.Web.Models.Domain.DataPlane", "DataPlane")
+                        .WithMany()
+                        .HasForeignKey("DataPlaneId");
+
                     b.HasOne("DirectorMesh.Web.Models.Domain.Site", "Site")
                         .WithMany("Configurations")
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DataPlane");
 
                     b.Navigation("Site");
                 });

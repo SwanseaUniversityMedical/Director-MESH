@@ -1,7 +1,7 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DirectorMesh.Web.Models.Domain;
-using Microsoft.Extensions.Configuration;
 
 namespace DirectorMesh.Web.Services;
 
@@ -9,9 +9,9 @@ public class ConfigurationGeneratorService(
     ILogger<ConfigurationGeneratorService> logger,
     IConfiguration configuration) : IConfigurationGeneratorService
 {
-    public Task<SiteConfiguration> GenerateAsync(Site site, IEnumerable<AclRule> applicableRules, CancellationToken ct = default)
+    public Task<SiteConfiguration> GenerateAsync(Site site, DataPlane dataPlane, IEnumerable<AclRule> dataPlaneRules, CancellationToken ct = default)
     {
-        var rules = applicableRules.ToList();
+        var rules = dataPlaneRules.ToList();
         var managementUrl = configuration["NetBird:ManagementUrl"] ?? "https://api.netbird.io";
         var signalUrl = configuration["NetBird:SignalUrl"] ?? "https://signal.netbird.io";
         var namespaceName = $"director-mesh-{Slug(site.Name)}";
@@ -20,7 +20,8 @@ public class ConfigurationGeneratorService(
         {
             siteId = site.Id,
             siteName = site.Name,
-            dataPlanes = site.DataPlanes.Select(dp => dp.Name),
+            dataPlaneId = dataPlane.Id,
+            dataPlane = dataPlane.Name,
             k8sNamespace = namespaceName,
             generatedAt = DateTime.UtcNow,
             services = site.Services.Select(s => new
@@ -52,21 +53,32 @@ public class ConfigurationGeneratorService(
             })
         };
 
+        var json = JsonSerializer.Serialize(configObj, new JsonSerializerOptions { WriteIndented = true });
+        var contentHash = ComputeHash(json);
         var k8s = GenerateK8sManifests(site, namespaceName, managementUrl, signalUrl);
 
         var config = new SiteConfiguration
         {
             SiteId = site.Id,
+            DataPlaneId = dataPlane.Id,
             Status = ConfigurationStatus.Draft,
             ApprovalToken = Guid.NewGuid().ToString("N"),
-            ConfigurationJson = JsonSerializer.Serialize(configObj, new JsonSerializerOptions { WriteIndented = true }),
+            ContentHash = contentHash,
+            ConfigurationJson = json,
             HaProxyConfig = null,
             K8sManifestYaml = k8s,
             CreatedAt = DateTime.UtcNow
         };
 
-        logger.LogInformation("Generated configuration for site {SiteId} ({SiteName})", site.Id, site.Name);
+        logger.LogInformation("Generated configuration for site {SiteId} data plane {DataPlaneId} hash {Hash}",
+            site.Id, dataPlane.Id, contentHash[..8]);
         return Task.FromResult(config);
+    }
+
+    private static string ComputeHash(string content)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(bytes).ToLower();
     }
 
     private static string GenerateK8sManifests(Site site, string namespaceName, string managementUrl, string signalUrl)
@@ -92,7 +104,6 @@ public class ConfigurationGeneratorService(
     private static void AppendServiceManifests(StringBuilder sb, NetworkService svc, string slug,
         string namespaceName, string managementUrl, string signalUrl)
     {
-        // Secret for NetBird setup key
         sb.AppendLine("---");
         sb.AppendLine("apiVersion: v1");
         sb.AppendLine("kind: Secret");
@@ -104,7 +115,6 @@ public class ConfigurationGeneratorService(
         sb.AppendLine($"  setup-key: \"{svc.NetBirdSetupKey ?? "REPLACE_WITH_SETUP_KEY"}\"");
         sb.AppendLine();
 
-        // ConfigMap with HAProxy config
         sb.AppendLine("---");
         sb.AppendLine("apiVersion: v1");
         sb.AppendLine("kind: ConfigMap");
@@ -116,7 +126,6 @@ public class ConfigurationGeneratorService(
         AppendHaProxyConfig(sb, svc);
         sb.AppendLine();
 
-        // Deployment with netbird + haproxy sidecars
         sb.AppendLine("---");
         sb.AppendLine("apiVersion: apps/v1");
         sb.AppendLine("kind: Deployment");
@@ -167,7 +176,6 @@ public class ConfigurationGeneratorService(
         sb.AppendLine($"          name: haproxy-{slug}");
         sb.AppendLine();
 
-        // Service so internal pods can reach this endpoint by DNS
         sb.AppendLine("---");
         sb.AppendLine("apiVersion: v1");
         sb.AppendLine("kind: Service");
@@ -186,7 +194,6 @@ public class ConfigurationGeneratorService(
 
     private static void AppendHaProxyConfig(StringBuilder sb, NetworkService svc)
     {
-        // Indented under the YAML literal block scalar (4 spaces base + 4 for haproxy content)
         const string indent = "    ";
         sb.AppendLine($"{indent}global");
         sb.AppendLine($"{indent}  log stdout format raw local0");
