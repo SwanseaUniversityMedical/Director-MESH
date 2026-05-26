@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DirectorMesh.SiteAgent.Controllers;
 
-public class HomeController(DirectorMeshClient client) : Controller
+public class HomeController(DirectorMeshClient client, GitopsService gitops) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -30,8 +30,24 @@ public class HomeController(DirectorMeshClient client) : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Approve(int configId, string? notes)
     {
-        await client.ApproveAsync(configId, notes);
-        TempData["Success"] = "Configuration approved.";
+        var result = await client.ApproveAsync(configId, notes);
+        if (result != null)
+        {
+            try
+            {
+                await gitops.PushApprovedConfigAsync(result);
+                TempData["Success"] = $"Configuration v{result.Version} approved and pushed to Gitea.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Success"] = $"Configuration v{result.Version} approved.";
+                TempData["Warning"] = $"Gitea push failed: {ex.Message}";
+            }
+        }
+        else
+        {
+            TempData["Error"] = "Approval failed — config may no longer be in Sent status.";
+        }
         return RedirectToAction(nameof(Index));
     }
 

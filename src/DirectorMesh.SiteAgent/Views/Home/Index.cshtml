@@ -11,6 +11,10 @@
 {
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@ViewBag.Error</div>
 }
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>@TempData["Warning"]</div>
+}
 
 @if (!Model.Any())
 {
@@ -20,21 +24,48 @@ else
 {
     <div class="card">
         <div class="card-body p-0">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light">
                     <tr>
                         <th>Data Plane</th>
+                        <th>Last Decision</th>
                         <th>Pending Config</th>
                         <th>Last Applied</th>
-                        <th>Actions</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var dp in Model)
                     {
                         <tr>
-                            <td class="fw-semibold align-middle">@dp.DataPlane</td>
-                            <td class="align-middle">
+                            <td class="fw-semibold">@dp.DataPlane</td>
+                            <td>
+                                @if (dp.LastDecision != null)
+                                {
+                                    @if (dp.LastDecision.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success me-1">v@(dp.LastDecision.Version) Approved</span>
+                                        <small class="text-muted">@dp.LastDecision.ApprovedAt?.ToString("yyyy-MM-dd HH:mm")</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger me-1">v@(dp.LastDecision.Version) Rejected</span>
+                                        @if (!string.IsNullOrEmpty(dp.LastDecision.RejectionReason))
+                                        {
+                                            <small class="text-muted" title="@dp.LastDecision.RejectionReason">
+                                                @(dp.LastDecision.RejectionReason.Length > 40
+                                                    ? dp.LastDecision.RejectionReason[..40] + "…"
+                                                    : dp.LastDecision.RejectionReason)
+                                            </small>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">None</span>
+                                }
+                            </td>
+                            <td>
                                 @if (dp.Pending != null)
                                 {
                                     <span class="badge bg-warning text-dark me-1">v@(dp.Pending.Version)</span>
@@ -42,10 +73,10 @@ else
                                 }
                                 else
                                 {
-                                    <span class="text-muted small">Up to date</span>
+                                    <span class="text-muted small">—</span>
                                 }
                             </td>
-                            <td class="align-middle">
+                            <td>
                                 @if (dp.LastApplied != null)
                                 {
                                     <span class="badge bg-success me-1">v@(dp.LastApplied.Version)</span>
@@ -56,7 +87,7 @@ else
                                     <span class="text-muted small">Never applied</span>
                                 }
                             </td>
-                            <td class="align-middle">
+                            <td class="text-end">
                                 @if (dp.Pending != null)
                                 {
                                     <a asp-action="Config" asp-route-dataPlaneId="@dp.DataPlaneId"

@@ -1,13 +1,66 @@
 # Standalone compose for a TRE site agent deployment.
-# Copy this file to your site and configure the environment variables below,
-# or supply them via a .env file alongside this compose file.
+# Supply values via a .env file alongside this compose file.
 #
-# Required:
-#   DIRECTOR_MESH_URL   - Base URL of the Director-MESH web app
-#   DIRECTOR_MESH_SITE  - Numeric site ID assigned in Director-MESH
-#   DIRECTOR_MESH_KEY   - API key from the site's Edit page in Director-MESH
+# To reset everything (wipe Gitea data and agent keys):
+#   docker compose -f docker-compose.siteagent.yml down -v
+#   docker compose -f docker-compose.siteagent.yml up -d
 
 services:
+
+  gitea:
+    image: gitea/gitea:latest
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__server__DOMAIN: ${GITEA_DOMAIN:-localhost}
+      GITEA__server__ROOT_URL: http://${GITEA_DOMAIN:-localhost}:${GITEA_PORT:-3000}/
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__security__SECRET_KEY: ${GITEA_SECRET_KEY:-change-this-secret-in-production-32chars}
+      GITEA__security__INTERNAL_TOKEN: ${GITEA_INTERNAL_TOKEN:-change-this-internal-token-in-production}
+      GITEA__security__PASSWORD_COMPLEXITY: "off"
+      GITEA__security__MIN_PASSWORD_LENGTH: "6"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+    ports:
+      - "${GITEA_PORT:-3000}:3000"
+    volumes:
+      - gitea_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/version >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # Runs once after Gitea is healthy and creates the admin user.
+  # Safe to re-run — silently skips if the user already exists.
+  gitea-init:
+    image: gitea/gitea:latest
+    user: "1000:1000"
+    depends_on:
+      gitea:
+        condition: service_healthy
+    volumes:
+      - gitea_data:/data
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        gitea admin user create \
+          --username "$$GITEA_ADMIN_USER" \
+          --password "$$GITEA_ADMIN_PASSWORD" \
+          --email "admin@director-mesh.local" \
+          --admin \
+          --must-change-password=false \
+          && echo "Admin user created." \
+          || { CODE=$$?; [ $$CODE -eq 1 ] && echo "Admin user already exists — skipping." || (echo "ERROR: user creation failed (exit $$CODE)" && exit $$CODE); }
+    environment:
+      GITEA_WORK_DIR: /data
+      GITEA_CUSTOM: /data/gitea
+      GITEA_ADMIN_USER: ${GITEA_ADMIN_USER:-gitea}
+      GITEA_ADMIN_PASSWORD: ${GITEA_ADMIN_PASSWORD:-gitea123}
+    restart: "no"
 
   site-agent:
     build:
@@ -21,4 +74,18 @@ services:
       DirectorMesh__BaseUrl: ${DIRECTOR_MESH_URL:-https://director-mesh.example.com}
       DirectorMesh__SiteId: ${DIRECTOR_MESH_SITE:-0}
       DirectorMesh__ApiKey: ${DIRECTOR_MESH_KEY:-}
+      Gitea__BaseUrl: http://gitea:3000
+      Gitea__Username: ${GITEA_ADMIN_USER:-gitea}
+      Gitea__Password: ${GITEA_ADMIN_PASSWORD:-gitea123}
+      Gitea__Repo: ${GITEA_REPO:-director-mesh-configs}
+      Gitea__RepoUrl: ${GITEA_REPO_URL:-}
+    volumes:
+      - agent_keys:/app/keys
+    depends_on:
+      gitea:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  gitea_data:
+  agent_keys:

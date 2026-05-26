@@ -37,11 +37,18 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
                 .OrderByDescending(c => c.Version)
                 .FirstOrDefaultAsync();
 
+            var lastDecision = await db.SiteConfigurations
+                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id &&
+                            (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Rejected))
+                .OrderByDescending(c => c.Version)
+                .FirstOrDefaultAsync();
+
             result.Add(new DataPlaneConfigResponse(
                 dp.Id,
                 dp.Name,
                 pending == null ? null : ToSummary(pending),
-                lastApplied == null ? null : ToSummary(lastApplied)
+                lastApplied == null ? null : ToSummary(lastApplied),
+                lastDecision == null ? null : ToSummary(lastDecision)
             ));
         }
 
@@ -54,9 +61,13 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
         var site = await AuthenticateSite(siteId);
         if (site == null) return Unauthorized();
 
-        var config = await db.SiteConfigurations.FirstOrDefaultAsync(c => c.Id == configId && c.SiteId == siteId);
+        var config = await db.SiteConfigurations
+            .Include(c => c.Site)
+            .Include(c => c.DataPlane)
+            .FirstOrDefaultAsync(c => c.Id == configId && c.SiteId == siteId);
         if (config == null) return NotFound();
-        if (config.Status != ConfigurationStatus.Sent) return BadRequest(new { error = "Config is not in Sent status." });
+        if (config.Status != ConfigurationStatus.Sent)
+            return BadRequest(new { error = "Config is not in Sent status." });
 
         config.Status = ConfigurationStatus.Approved;
         config.ApprovedAt = DateTime.UtcNow;
@@ -64,7 +75,11 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
             config.Notes = body.Notes;
         await db.SaveChangesAsync();
 
-        return Ok(new { message = "Configuration approved." });
+        return Ok(new ApprovalResult(
+            config.Site.Name,
+            config.DataPlane?.Name ?? "default",
+            config.Version,
+            config.K8sManifestYaml));
     }
 
     [HttpPost("{siteId}/configs/{configId}/reject")]
@@ -75,7 +90,8 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
 
         var config = await db.SiteConfigurations.FirstOrDefaultAsync(c => c.Id == configId && c.SiteId == siteId);
         if (config == null) return NotFound();
-        if (config.Status != ConfigurationStatus.Sent) return BadRequest(new { error = "Config is not in Sent status." });
+        if (config.Status != ConfigurationStatus.Sent)
+            return BadRequest(new { error = "Config is not in Sent status." });
 
         config.Status = ConfigurationStatus.Rejected;
         config.RejectionReason = body.Reason;
@@ -86,14 +102,15 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
 
     private static ConfigSummary ToSummary(SiteConfiguration c) =>
         new(c.Id, c.Version, c.Status.ToString(), c.ConfigurationJson, c.K8sManifestYaml,
-            c.CreatedAt, c.SentAt, c.ApprovedAt, c.AppliedAt);
+            c.CreatedAt, c.SentAt, c.ApprovedAt, c.AppliedAt, c.RejectionReason);
 }
 
 public record DataPlaneConfigResponse(
     int DataPlaneId,
     string DataPlane,
     ConfigSummary? Pending,
-    ConfigSummary? LastApplied);
+    ConfigSummary? LastApplied,
+    ConfigSummary? LastDecision);
 
 public record ConfigSummary(
     int Id,
@@ -104,7 +121,9 @@ public record ConfigSummary(
     DateTime CreatedAt,
     DateTime? SentAt,
     DateTime? ApprovedAt,
-    DateTime? AppliedAt);
+    DateTime? AppliedAt,
+    string? RejectionReason);
 
 public record ApproveRequest(string? Notes);
 public record RejectRequest(string Reason);
+public record ApprovalResult(string SiteName, string DataPlaneName, int Version, string? K8sManifestYaml);

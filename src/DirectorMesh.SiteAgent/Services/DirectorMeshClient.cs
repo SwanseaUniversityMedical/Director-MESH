@@ -14,12 +14,13 @@ public class DirectorMeshClient(HttpClient http, DirectorMeshOptions options)
         return result ?? [];
     }
 
-    public async Task<bool> ApproveAsync(int configId, string? notes = null, CancellationToken ct = default)
+    public async Task<ApprovalResult?> ApproveAsync(int configId, string? notes = null, CancellationToken ct = default)
     {
         var response = await http.PostAsJsonAsync(
             $"api/site-agent/{options.SiteId}/configs/{configId}/approve",
             new { notes }, ct);
-        return response.IsSuccessStatusCode;
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ApprovalResult>(JsonOptions, ct);
     }
 
     public async Task<bool> RejectAsync(int configId, string reason, CancellationToken ct = default)
@@ -35,7 +36,8 @@ public record DataPlaneConfigResponse(
     int DataPlaneId,
     string DataPlane,
     ConfigSummary? Pending,
-    ConfigSummary? LastApplied);
+    ConfigSummary? LastApplied,
+    ConfigSummary? LastDecision);
 
 public record ConfigSummary(
     int Id,
@@ -46,4 +48,7 @@ public record ConfigSummary(
     DateTime CreatedAt,
     DateTime? SentAt,
     DateTime? ApprovedAt,
-    DateTime? AppliedAt);
+    DateTime? AppliedAt,
+    string? RejectionReason);
+
+public record ApprovalResult(string SiteName, string DataPlaneName, int Version, string? K8sManifestYaml);
