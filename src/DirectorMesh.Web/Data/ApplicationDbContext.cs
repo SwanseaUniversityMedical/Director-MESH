@@ -10,6 +10,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<NetworkService> NetworkServices => Set<NetworkService>();
     public DbSet<AclRule> AclRules => Set<AclRule>();
     public DbSet<SiteConfiguration> SiteConfigurations => Set<SiteConfiguration>();
+    public DbSet<NetBirdSettings> NetBirdSettings => Set<NetBirdSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

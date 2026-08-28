@@ -1,6 +1,8 @@
 {
   "realm": "director-mesh",
   "displayName": "Director MESH",
+  "displayNameHtml": "<span class=\"dm-brand-icon\"></span><div class=\"dm-brand-title\">Director-MESH</div><div class=\"dm-brand-sub\">Network Mesh Control Plane</div>",
+  "loginTheme": "director-mesh",
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,

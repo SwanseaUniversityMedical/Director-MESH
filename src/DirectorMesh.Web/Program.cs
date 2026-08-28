@@ -50,6 +50,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<INetBirdSettingsResolver, NetBirdSettingsResolver>();
 builder.Services.AddScoped<INetBirdService, NetBirdService>();
 builder.Services.AddScoped<IConfigurationGeneratorService, ConfigurationGeneratorService>();
 

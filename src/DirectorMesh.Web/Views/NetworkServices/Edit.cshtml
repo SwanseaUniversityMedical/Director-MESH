@@ -27,7 +27,7 @@
                             <label asp-for="Description" class="form-label fw-semibold"></label>
                             <textarea asp-for="Description" class="form-control" rows="2"></textarea>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label asp-for="SiteId" class="form-label fw-semibold"></label>
                             <select asp-for="SiteId" asp-items="Model.Sites" class="form-select"></select>
                         </div>
@@ -43,22 +43,6 @@
                             <label asp-for="Port" class="form-label fw-semibold"></label>
                             <input asp-for="Port" class="form-control" type="number" />
                         </div>
-                        <div class="col-md-4">
-                            <label asp-for="NetBirdPeerName" class="form-label fw-semibold"></label>
-                            <input asp-for="NetBirdPeerName" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="NetBirdDnsName" class="form-label fw-semibold"></label>
-                            <input asp-for="NetBirdDnsName" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="NetBirdIpAddress" class="form-label fw-semibold"></label>
-                            <input asp-for="NetBirdIpAddress" class="form-control" />
-                        </div>
-                        <div class="col-12">
-                            <label asp-for="NetBirdSetupKey" class="form-label fw-semibold"></label>
-                            <input asp-for="NetBirdSetupKey" class="form-control font-monospace" />
-                        </div>
                         <div class="col-12" id="localEndpointRow">
                             <label asp-for="LocalEndpoint" class="form-label fw-semibold">Local Endpoint <span class="badge bg-info text-dark">Inbound</span></label>
                             <input asp-for="LocalEndpoint" class="form-control" />
@@ -66,6 +50,22 @@
                         <div class="col-12" id="remoteEndpointRow">
                             <label asp-for="RemoteNetBirdDnsName" class="form-label fw-semibold">Remote NetBird DNS <span class="badge bg-primary">Outbound</span></label>
                             <input asp-for="RemoteNetBirdDnsName" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdPeerName" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdPeerName" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdDnsName" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdDnsName" class="form-control" disabled="disabled" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="NetBirdIpAddress" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdIpAddress" class="form-control" disabled="disabled" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="NetBirdSetupKey" class="form-label fw-semibold"></label>
+                            <input asp-for="NetBirdSetupKey" class="form-control font-monospace" />
                         </div>
                     </div>
 
@@ -84,8 +84,9 @@
     <script>
         function updateEndpointVisibility() {
             const dir = document.getElementById('directionSelect').value;
-            document.getElementById('localEndpointRow').style.display = dir === 'Inbound' ? '' : 'none';
-            document.getElementById('remoteEndpointRow').style.display = dir === 'Outbound' ? '' : 'none';
+            console.log('Direction selected: ' + dir);
+            document.getElementById('localEndpointRow').style.display = dir === '0' ? '' : 'none';
+            document.getElementById('remoteEndpointRow').style.display = dir === '1' ? '' : 'none';
         }
         document.getElementById('directionSelect').addEventListener('change', updateEndpointVisibility);
         updateEndpointVisibility();

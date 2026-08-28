@@ -94,6 +94,12 @@
                asp-controller="SiteConfigurations" asp-action="Index">
                 <i class="bi bi-send"></i> Site Configs
             </a>
+
+            <div class="nav-section mt-2">System</div>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")"
+               asp-controller="Settings" asp-action="NetBird">
+                <i class="bi bi-hdd-network"></i> NetBird Settings
+            </a>
         </div>
 
         <div class="sidebar-footer mt-auto">

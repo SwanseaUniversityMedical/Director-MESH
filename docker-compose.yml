@@ -38,6 +38,7 @@ services:
       KC_HEALTH_ENABLED: "true"
     volumes:
       - ./keycloak/director-mesh-realm.json:/opt/keycloak/data/import/director-mesh-realm.json:ro
+      - ./keycloak/themes/director-mesh:/opt/keycloak/themes/director-mesh:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -71,6 +72,7 @@ services:
       Keycloak__ClientSecret: director-mesh-secret
       NetBird__ApiBase: https://api.netbird.io/api
       NetBird__ApiToken: ""
+      NetBird__DnsDomain: ""
     depends_on:
       postgres:
         condition: service_healthy

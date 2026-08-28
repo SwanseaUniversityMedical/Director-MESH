@@ -4,19 +4,17 @@ using System.Text.Json;
 
 namespace DirectorMesh.Web.Services;
 
-public class NetBirdService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<NetBirdService> logger) : INetBirdService
+public class NetBirdService(IHttpClientFactory httpClientFactory, INetBirdSettingsResolver settingsResolver, ILogger<NetBirdService> logger) : INetBirdService
 {
-    private readonly string _apiBase = configuration["NetBird:ApiBase"] ?? "https://api.netbird.io/api";
-    private readonly string _apiToken = configuration["NetBird:ApiToken"] ?? string.Empty;
-
     public async Task<string?> CreatePeerGroupAsync(string groupName, CancellationToken ct = default)
     {
         try
         {
+            var settings = await settingsResolver.ResolveAsync(ct);
             var client = httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _apiToken);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", settings.ApiToken);
             var body = JsonSerializer.Serialize(new { name = groupName });
-            var response = await client.PostAsync($"{_apiBase}/groups",
+            var response = await client.PostAsync($"{settings.ApiBase}/groups",
                 new StringContent(body, Encoding.UTF8, "application/json"), ct);
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync(ct);
@@ -34,8 +32,9 @@ public class NetBirdService(IHttpClientFactory httpClientFactory, IConfiguration
     {
         try
         {
+            var settings = await settingsResolver.ResolveAsync(ct);
             var client = httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _apiToken);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", settings.ApiToken);
             var body = JsonSerializer.Serialize(new
             {
                 name,
@@ -55,7 +54,7 @@ public class NetBirdService(IHttpClientFactory httpClientFactory, IConfiguration
                     }
                 }
             });
-            var response = await client.PostAsync($"{_apiBase}/policies",
+            var response = await client.PostAsync($"{settings.ApiBase}/policies",
                 new StringContent(body, Encoding.UTF8, "application/json"), ct);
             return response.IsSuccessStatusCode;
         }
@@ -70,9 +69,10 @@ public class NetBirdService(IHttpClientFactory httpClientFactory, IConfiguration
     {
         try
         {
+            var settings = await settingsResolver.ResolveAsync(ct);
             var client = httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _apiToken);
-            var response = await client.DeleteAsync($"{_apiBase}/policies/{policyId}", ct);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", settings.ApiToken);
+            var response = await client.DeleteAsync($"{settings.ApiBase}/policies/{policyId}", ct);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

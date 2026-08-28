@@ -1,0 +1,68 @@
+@model NetBirdSettingsViewModel
+@{
+    ViewData["Title"] = "NetBird Settings";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-hdd-network me-2"></i>NetBird Settings
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Values set here are stored in the database and take priority over the
+                    <code>NetBird__ApiBase</code>, <code>NetBird__ApiToken</code> and <code>NetBird__DnsDomain</code>
+                    environment variables (or their <code>appsettings.json</code> equivalents). Leave a field blank
+                    to fall back to the environment-configured value shown beneath it.
+                </p>
+
+                <form asp-action="NetBird" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="ApiBase" class="form-label fw-semibold"></label>
+                        <input asp-for="ApiBase" class="form-control font-monospace" placeholder="https://api.netbird.io/api" />
+                        <span asp-validation-for="ApiBase" class="text-danger small"></span>
+                        <div class="form-text">Currently in effect: <code>@Model.EffectiveApiBase</code></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ApiToken" class="form-label fw-semibold">API Access Token <span class="text-muted fw-normal">(personal access token used to call the NetBird management API)</span></label>
+                        <input asp-for="ApiToken" class="form-control font-monospace" placeholder="Leave blank to use the environment token" />
+                        <span asp-validation-for="ApiToken" class="text-danger small"></span>
+                        <div class="form-text">
+                            Currently in effect:
+                            @if (Model.EffectiveApiTokenIsSet)
+                            {
+                                <span class="text-success"><i class="bi bi-check-circle me-1"></i>token configured</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>not set</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="DnsDomain" class="form-label fw-semibold">DNS Domain <span class="text-muted fw-normal">(domain suffix NetBird assigns to peers)</span></label>
+                        <input asp-for="DnsDomain" class="form-control font-monospace" placeholder="e.g. netbird.internal.example.org" />
+                        <span asp-validation-for="DnsDomain" class="text-danger small"></span>
+                        <div class="form-text">Currently in effect: <code>@Model.EffectiveDnsDomain</code></div>
+                    </div>
+
+                    @if (Model.UpdatedAt != null)
+                    {
+                        <p class="text-muted small">Database override last updated @Model.UpdatedAt.Value.ToString("u")</p>
+                    }
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @await Html.PartialAsync("_ValidationScriptsPartial") }

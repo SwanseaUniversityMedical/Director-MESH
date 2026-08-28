@@ -1,0 +1,80 @@
+/* Director-MESH brand theme — mirrors the colors/typography of DirectorMesh.Web
+   (navy sidebar #1a2332, Bootstrap 5 primary blue, flat cards, no gradients). */
+
+:root {
+    --pf-v5-global--primary-color--100: #0d6efd;
+    --pf-v5-global--primary-color--200: #0b5ed7;
+    --pf-v5-global--link--Color: #0d6efd;
+    --pf-v5-global--link--Color--hover: #0b5ed7;
+    --pf-v5-c-button--m-primary--BackgroundColor: #0d6efd;
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: #0b5ed7;
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: #0b5ed7;
+    --pf-v5-c-button--m-primary--active--BackgroundColor: #0a58ca;
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: #0d6efd;
+    --pf-v5-c-form-control--m-focus--after--BorderBottomColor: #0d6efd;
+}
+
+#keycloak-bg {
+    background: #1a2332;
+    min-height: 100vh;
+}
+
+#kc-header-wrapper {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.dm-brand-icon {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto .5rem;
+    background: url("../img/logo.svg") no-repeat center / contain;
+}
+
+.dm-brand-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: .5px;
+}
+
+.dm-brand-sub {
+    color: #8899aa;
+    font-size: .75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: .15rem;
+}
+
+.pf-v5-c-login__main {
+    border-radius: .5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 10px 30px rgba(0, 0, 0, .25);
+}
+
+.pf-v5-c-login__main-header .pf-v5-c-title {
+    color: #1a2332;
+    font-weight: 600;
+}
+
+.pf-v5-c-button.pf-m-primary {
+    background-color: #0d6efd;
+    border-radius: .375rem;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+    background-color: #0b5ed7;
+}
+
+a,
+.pf-v5-c-login__main-footer-links-item-link {
+    color: #0d6efd;
+}
+
+a:hover {
+    color: #0b5ed7;
+}
