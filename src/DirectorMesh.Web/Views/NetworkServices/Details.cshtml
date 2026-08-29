@@ -4,21 +4,8 @@
 }
 
 @section TopbarActions {
-    <form asp-action="CreateNetBirdPeer" asp-route-id="@Model.Id" method="post" class="d-inline-flex align-items-center gap-2 me-2">
-        @if (Model.Site.DataPlanes.Count > 1)
-        {
-            <select name="dataPlaneId" class="form-select form-select-sm" style="width: auto;" required>
-                @foreach (var dp in Model.Site.DataPlanes)
-                {
-                    <option value="@dp.Id">@dp.Name</option>
-                }
-            </select>
-        }
-        else
-        {
-            <input type="hidden" name="dataPlaneId" value="@Model.Site.DataPlanes.FirstOrDefault()?.Id" />
-        }
-        <button type="submit" class="btn btn-outline-primary btn-sm" @(!Model.Site.DataPlanes.Any() ? "disabled" : "")>
+    <form asp-action="CreateNetBirdPeer" asp-route-id="@Model.Id" method="post" class="d-inline">
+        <button type="submit" class="btn btn-outline-primary btn-sm me-2">
             <i class="bi bi-diagram-3 me-1"></i>Create NetBird Peer
         </button>
     </form>
@@ -37,8 +24,10 @@
                     <dd class="col-7">
                         <a asp-controller="Sites" asp-action="Details" asp-route-id="@Model.SiteId" class="text-decoration-none">@Model.Site.Name</a>
                     </dd>
-                    <dt class="col-5">Data Planes</dt>
-                    <dd class="col-7 text-muted">@string.Join(", ", Model.Site.DataPlanes.Select(dp => dp.Name))</dd>
+                    <dt class="col-5">Data Plane</dt>
+                    <dd class="col-7">
+                        <a asp-controller="DataPlanes" asp-action="Details" asp-route-id="@Model.DataPlaneId" class="text-decoration-none">@Model.DataPlane.Name</a>
+                    </dd>
                     <dt class="col-5">Direction</dt>
                     <dd class="col-7">
                         @if (Model.Direction == ServiceDirection.Inbound)

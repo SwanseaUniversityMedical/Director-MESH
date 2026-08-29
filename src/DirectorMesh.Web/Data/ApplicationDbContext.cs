@@ -38,5 +38,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithMany(d => d.AclRules)
             .HasForeignKey(a => a.DataPlaneId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<NetworkService>()
+            .HasOne(s => s.DataPlane)
+            .WithMany(d => d.Services)
+            .HasForeignKey(s => s.DataPlaneId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

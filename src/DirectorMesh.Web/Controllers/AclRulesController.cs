@@ -29,8 +29,10 @@ public class AclRulesController(ApplicationDbContext db) : Controller
     {
         var rule = await db.AclRules
             .Include(r => r.DataPlane)
-            .Include(r => r.SourceService).ThenInclude(s => s.Site).ThenInclude(s => s.DataPlanes)
-            .Include(r => r.DestinationService).ThenInclude(s => s.Site).ThenInclude(s => s.DataPlanes)
+            .Include(r => r.SourceService).ThenInclude(s => s.Site)
+            .Include(r => r.SourceService).ThenInclude(s => s.DataPlane)
+            .Include(r => r.DestinationService).ThenInclude(s => s.Site)
+            .Include(r => r.DestinationService).ThenInclude(s => s.DataPlane)
             .FirstOrDefaultAsync(r => r.Id == id);
         if (rule == null) return NotFound();
         return View(rule);
@@ -154,12 +156,16 @@ public class AclRulesController(ApplicationDbContext db) : Controller
             var src = await db.NetworkServices.FindAsync(vm.SourceServiceId);
             if (src?.Direction != ServiceDirection.Outbound)
                 ModelState.AddModelError(nameof(vm.SourceServiceId), "Source service must be an Outbound service.");
+            else if (src.DataPlaneId != vm.DataPlaneId)
+                ModelState.AddModelError(nameof(vm.SourceServiceId), "Source service is not on the selected data plane.");
         }
         if (vm.DestinationServiceId > 0)
         {
             var dst = await db.NetworkServices.FindAsync(vm.DestinationServiceId);
             if (dst?.Direction != ServiceDirection.Inbound)
                 ModelState.AddModelError(nameof(vm.DestinationServiceId), "Destination service must be an Inbound service.");
+            else if (dst.DataPlaneId != vm.DataPlaneId)
+                ModelState.AddModelError(nameof(vm.DestinationServiceId), "Destination service is not on the selected data plane.");
         }
     }
 }

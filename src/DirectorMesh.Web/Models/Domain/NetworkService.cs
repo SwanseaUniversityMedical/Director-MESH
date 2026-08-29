@@ -7,6 +7,8 @@ public class NetworkService
     public string? Description { get; set; }
     public int SiteId { get; set; }
     public Site Site { get; set; } = null!;
+    public int DataPlaneId { get; set; }
+    public DataPlane DataPlane { get; set; } = null!;
     public ServiceDirection Direction { get; set; }
     public ServiceProtocol Protocol { get; set; } = ServiceProtocol.TCP;
     public int Port { get; set; }

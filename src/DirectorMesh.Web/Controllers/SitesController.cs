@@ -27,7 +27,7 @@ public class SitesController(ApplicationDbContext db) : Controller
     {
         var site = await db.Sites
             .Include(s => s.DataPlanes)
-            .Include(s => s.Services)
+            .Include(s => s.Services).ThenInclude(svc => svc.DataPlane)
             .Include(s => s.Configurations.OrderByDescending(c => c.Version).Take(5))
             .FirstOrDefaultAsync(s => s.Id == id);
         if (site == null) return NotFound();

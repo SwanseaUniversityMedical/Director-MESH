@@ -33,7 +33,8 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
                 .FirstOrDefaultAsync();
 
             var lastApplied = await db.SiteConfigurations
-                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id && c.Status == ConfigurationStatus.Applied)
+                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id &&
+                            (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Applied))
                 .OrderByDescending(c => c.Version)
                 .FirstOrDefaultAsync();
 

@@ -46,7 +46,7 @@
                             <a asp-controller="Sites" asp-action="Details" asp-route-id="@svc.SiteId"
                                class="text-decoration-none text-muted small">@svc.Site.Name</a>
                         </td>
-                        <td class="text-muted small">@string.Join(", ", svc.Site.DataPlanes.Select(dp => dp.Name))</td>
+                        <td class="text-muted small">@svc.DataPlane.Name</td>
                         <td>
                             @if (svc.Direction == ServiceDirection.Inbound)
                             {

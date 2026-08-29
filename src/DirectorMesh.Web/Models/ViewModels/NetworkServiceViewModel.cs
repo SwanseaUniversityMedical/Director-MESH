@@ -19,6 +19,10 @@ public class NetworkServiceCreateEditViewModel
     public int SiteId { get; set; }
 
     [Required]
+    [Display(Name = "Data Plane")]
+    public int DataPlaneId { get; set; }
+
+    [Required]
     [Display(Name = "Direction")]
     public ServiceDirection Direction { get; set; }
 
@@ -60,4 +64,9 @@ public class NetworkServiceCreateEditViewModel
     public bool IsEnabled { get; set; } = true;
 
     public IEnumerable<SelectListItem> Sites { get; set; } = Enumerable.Empty<SelectListItem>();
+    public IEnumerable<SelectListItem> DataPlanes { get; set; } = Enumerable.Empty<SelectListItem>();
+
+    // Maps SiteId -> the DataPlane ids attached to that site, so the UI can filter the
+    // Data Plane dropdown down to only what's valid for the selected site.
+    public Dictionary<int, int[]> SiteDataPlaneMap { get; set; } = new();
 }

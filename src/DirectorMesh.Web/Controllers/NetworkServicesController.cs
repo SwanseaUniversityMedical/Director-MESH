@@ -14,7 +14,7 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
 {
     public async Task<IActionResult> Index(int? siteId)
     {
-        var query = db.NetworkServices.Include(s => s.Site).ThenInclude(s => s.DataPlanes).AsQueryable();
+        var query = db.NetworkServices.Include(s => s.Site).Include(s => s.DataPlane).AsQueryable();
         if (siteId.HasValue)
         {
             query = query.Where(s => s.SiteId == siteId.Value);
@@ -27,7 +27,8 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
     public async Task<IActionResult> Details(int id)
     {
         var svc = await db.NetworkServices
-            .Include(s => s.Site).ThenInclude(s => s.DataPlanes)
+            .Include(s => s.Site)
+            .Include(s => s.DataPlane)
             .Include(s => s.SourceAclRules).ThenInclude(r => r.DestinationService).ThenInclude(s => s.Site)
             .Include(s => s.DestinationAclRules).ThenInclude(r => r.SourceService).ThenInclude(s => s.Site)
             .FirstOrDefaultAsync(s => s.Id == id);
@@ -38,19 +39,21 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
     public async Task<IActionResult> Create(int? siteId)
     {
         var vm = new NetworkServiceCreateEditViewModel { SiteId = siteId ?? 0 };
-        await PopulateSites(vm);
+        await PopulateSitesAndDataPlanes(vm);
         return View(vm);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(NetworkServiceCreateEditViewModel vm)
     {
-        if (!ModelState.IsValid) { await PopulateSites(vm); return View(vm); }
+        await ValidateDataPlane(vm);
+        if (!ModelState.IsValid) { await PopulateSitesAndDataPlanes(vm); return View(vm); }
         var svc = new NetworkService
         {
             Name = vm.Name,
             Description = vm.Description,
             SiteId = vm.SiteId,
+            DataPlaneId = vm.DataPlaneId,
             Direction = vm.Direction,
             Protocol = vm.Protocol,
             Port = vm.Port,
@@ -79,6 +82,7 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
             Name = svc.Name,
             Description = svc.Description,
             SiteId = svc.SiteId,
+            DataPlaneId = svc.DataPlaneId,
             Direction = svc.Direction,
             Protocol = svc.Protocol,
             Port = svc.Port,
@@ -90,7 +94,7 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
             RemoteNetBirdDnsName = svc.RemoteNetBirdDnsName,
             IsEnabled = svc.IsEnabled
         };
-        await PopulateSites(vm);
+        await PopulateSitesAndDataPlanes(vm);
         return View(vm);
     }
 
@@ -98,12 +102,14 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
     public async Task<IActionResult> Edit(int id, NetworkServiceCreateEditViewModel vm)
     {
         if (id != vm.Id) return BadRequest();
-        if (!ModelState.IsValid) { await PopulateSites(vm); return View(vm); }
+        await ValidateDataPlane(vm);
+        if (!ModelState.IsValid) { await PopulateSitesAndDataPlanes(vm); return View(vm); }
         var svc = await db.NetworkServices.FindAsync(id);
         if (svc == null) return NotFound();
         svc.Name = vm.Name;
         svc.Description = vm.Description;
         svc.SiteId = vm.SiteId;
+        svc.DataPlaneId = vm.DataPlaneId;
         svc.Direction = vm.Direction;
         svc.Protocol = vm.Protocol;
         svc.Port = vm.Port;
@@ -140,26 +146,20 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateNetBirdPeer(int id, int dataPlaneId)
+    public async Task<IActionResult> CreateNetBirdPeer(int id)
     {
         var svc = await db.NetworkServices
-            .Include(s => s.Site).ThenInclude(s => s.DataPlanes)
+            .Include(s => s.DataPlane)
             .FirstOrDefaultAsync(s => s.Id == id);
         if (svc == null) return NotFound();
 
-        var dataPlane = svc.Site.DataPlanes.FirstOrDefault(dp => dp.Id == dataPlaneId);
-        if (dataPlane == null)
+        if (string.IsNullOrWhiteSpace(svc.DataPlane.NetBirdNetworkId))
         {
-            TempData["Error"] = "Select a valid data plane for this site.";
-            return RedirectToAction(nameof(Details), new { id });
-        }
-        if (string.IsNullOrWhiteSpace(dataPlane.NetBirdNetworkId))
-        {
-            TempData["Error"] = $"Data plane '{dataPlane.Name}' has no NetBird Network ID configured.";
+            TempData["Error"] = $"Data plane '{svc.DataPlane.Name}' has no NetBird Network ID configured.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        var peerName = $"{dataPlane.NetBirdNetworkId}-{svc.Name}";
+        var peerName = $"{svc.DataPlane.NetBirdNetworkId}-{svc.Name}";
         var setupKey = await netBirdService.CreateSetupKeyAsync(peerName);
         if (setupKey == null)
         {
@@ -174,11 +174,23 @@ public class NetworkServicesController(ApplicationDbContext db, INetBirdService 
         return RedirectToAction(nameof(Details), new { id });
     }
 
-    private async Task PopulateSites(NetworkServiceCreateEditViewModel vm)
+    private async Task PopulateSitesAndDataPlanes(NetworkServiceCreateEditViewModel vm)
     {
-        vm.Sites = (await db.Sites.Include(s => s.DataPlanes).OrderBy(s => s.Name).ToListAsync())
-            .Select(s => new SelectListItem(
-                $"{s.Name} ({string.Join(", ", s.DataPlanes.Select(dp => dp.Name))})",
-                s.Id.ToString()));
+        var sites = await db.Sites.Include(s => s.DataPlanes).OrderBy(s => s.Name).ToListAsync();
+        vm.Sites = sites.Select(s => new SelectListItem(
+            $"{s.Name} ({string.Join(", ", s.DataPlanes.Select(dp => dp.Name))})",
+            s.Id.ToString()));
+        vm.DataPlanes = (await db.DataPlanes.OrderBy(d => d.Name).ToListAsync())
+            .Select(d => new SelectListItem(d.Name, d.Id.ToString()));
+        vm.SiteDataPlaneMap = sites.ToDictionary(s => s.Id, s => s.DataPlanes.Select(dp => dp.Id).ToArray());
+    }
+
+    private async Task ValidateDataPlane(NetworkServiceCreateEditViewModel vm)
+    {
+        var site = await db.Sites.Include(s => s.DataPlanes).FirstOrDefaultAsync(s => s.Id == vm.SiteId);
+        if (site != null && site.DataPlanes.All(dp => dp.Id != vm.DataPlaneId))
+        {
+            ModelState.AddModelError(nameof(vm.DataPlaneId), "Selected data plane is not attached to the selected site.");
+        }
     }
 }

@@ -39,8 +39,8 @@
                 <dl class="row mb-0 small">
                     <dt class="col-4">Site</dt>
                     <dd class="col-8"><a asp-controller="Sites" asp-action="Details" asp-route-id="@Model.SourceService.SiteId" class="text-decoration-none">@Model.SourceService.Site.Name</a></dd>
-                    <dt class="col-4">Data Planes</dt>
-                    <dd class="col-8 text-muted">@string.Join(", ", Model.SourceService.Site.DataPlanes.Select(dp => dp.Name))</dd>
+                    <dt class="col-4">Data Plane</dt>
+                    <dd class="col-8 text-muted">@Model.SourceService.DataPlane.Name</dd>
                     <dt class="col-4">Service</dt>
                     <dd class="col-8"><a asp-controller="NetworkServices" asp-action="Details" asp-route-id="@Model.SourceServiceId" class="text-decoration-none fw-semibold">@Model.SourceService.Name</a></dd>
                     <dt class="col-4">Protocol</dt>
@@ -54,8 +54,8 @@
                 <dl class="row mb-0 small">
                     <dt class="col-4">Site</dt>
                     <dd class="col-8"><a asp-controller="Sites" asp-action="Details" asp-route-id="@Model.DestinationService.SiteId" class="text-decoration-none">@Model.DestinationService.Site.Name</a></dd>
-                    <dt class="col-4">Data Planes</dt>
-                    <dd class="col-8 text-muted">@string.Join(", ", Model.DestinationService.Site.DataPlanes.Select(dp => dp.Name))</dd>
+                    <dt class="col-4">Data Plane</dt>
+                    <dd class="col-8 text-muted">@Model.DestinationService.DataPlane.Name</dd>
                     <dt class="col-4">Service</dt>
                     <dd class="col-8"><a asp-controller="NetworkServices" asp-action="Details" asp-route-id="@Model.DestinationServiceId" class="text-decoration-none fw-semibold">@Model.DestinationService.Name</a></dd>
                     <dt class="col-4">Protocol</dt>

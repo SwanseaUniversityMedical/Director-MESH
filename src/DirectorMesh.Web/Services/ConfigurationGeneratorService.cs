@@ -12,6 +12,7 @@ public class ConfigurationGeneratorService(
     public Task<SiteConfiguration> GenerateAsync(Site site, DataPlane dataPlane, IEnumerable<AclRule> dataPlaneRules, CancellationToken ct = default)
     {
         var rules = dataPlaneRules.ToList();
+        var dataPlaneServices = site.Services.Where(s => s.DataPlaneId == dataPlane.Id).ToList();
         var managementUrl = configuration["NetBird:ManagementUrl"] ?? "https://api.netbird.io";
         var signalUrl = configuration["NetBird:SignalUrl"] ?? "https://signal.netbird.io";
         var namespaceName = $"director-mesh-{Slug(site.Name)}";
@@ -24,7 +25,7 @@ public class ConfigurationGeneratorService(
             dataPlane = dataPlane.Name,
             k8sNamespace = namespaceName,
             generatedAt = DateTime.UtcNow,
-            services = site.Services.Select(s => new
+            services = dataPlaneServices.Select(s => new
             {
                 s.Id,
                 s.Name,
@@ -55,7 +56,7 @@ public class ConfigurationGeneratorService(
 
         var json = JsonSerializer.Serialize(configObj, new JsonSerializerOptions { WriteIndented = true });
         var contentHash = ComputeHash(json);
-        var k8s = GenerateK8sManifests(site, namespaceName, managementUrl, signalUrl);
+        var k8s = GenerateK8sManifests(dataPlaneServices, namespaceName, managementUrl, signalUrl);
 
         var config = new SiteConfiguration
         {
@@ -81,7 +82,7 @@ public class ConfigurationGeneratorService(
         return Convert.ToHexString(bytes).ToLower();
     }
 
-    private static string GenerateK8sManifests(Site site, string namespaceName, string managementUrl, string signalUrl)
+    private static string GenerateK8sManifests(IEnumerable<NetworkService> services, string namespaceName, string managementUrl, string signalUrl)
     {
         var sb = new StringBuilder();
 
@@ -92,7 +93,7 @@ public class ConfigurationGeneratorService(
         sb.AppendLine($"  name: {namespaceName}");
         sb.AppendLine();
 
-        foreach (var svc in site.Services.Where(s => s.IsEnabled))
+        foreach (var svc in services.Where(s => s.IsEnabled))
         {
             var slug = Slug(svc.Name);
             AppendServiceManifests(sb, svc, slug, namespaceName, managementUrl, signalUrl);

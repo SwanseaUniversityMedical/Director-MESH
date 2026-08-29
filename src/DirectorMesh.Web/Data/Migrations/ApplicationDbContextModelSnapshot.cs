@@ -128,6 +128,9 @@ namespace DirectorMesh.Web.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DataPlaneId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -175,6 +178,8 @@ namespace DirectorMesh.Web.Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DataPlaneId");
 
                     b.HasIndex("SiteId");
 
@@ -316,11 +321,19 @@ namespace DirectorMesh.Web.Data.Migrations
 
             modelBuilder.Entity("DirectorMesh.Web.Models.Domain.NetworkService", b =>
                 {
+                    b.HasOne("DirectorMesh.Web.Models.Domain.DataPlane", "DataPlane")
+                        .WithMany("Services")
+                        .HasForeignKey("DataPlaneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("DirectorMesh.Web.Models.Domain.Site", "Site")
                         .WithMany("Services")
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DataPlane");
 
                     b.Navigation("Site");
                 });
@@ -360,6 +373,8 @@ namespace DirectorMesh.Web.Data.Migrations
             modelBuilder.Entity("DirectorMesh.Web.Models.Domain.DataPlane", b =>
                 {
                     b.Navigation("AclRules");
+
+                    b.Navigation("Services");
                 });
 
             modelBuilder.Entity("DirectorMesh.Web.Models.Domain.NetworkService", b =>
