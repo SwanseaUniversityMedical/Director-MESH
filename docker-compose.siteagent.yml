@@ -74,7 +74,7 @@ services:
       DirectorMesh__BaseUrl: ${DIRECTOR_MESH_URL:-https://director-mesh.example.com}
       DirectorMesh__SiteId: ${DIRECTOR_MESH_SITE:-0}
       DirectorMesh__ApiKey: ${DIRECTOR_MESH_KEY:-}
-      Gitea__BaseUrl: http://gitea:3000
+      Gitea__BaseUrl: ${GITEA_BASE_URL:-http://gitea:3000}
       Gitea__Username: ${GITEA_ADMIN_USER:-gitea}
       Gitea__Password: ${GITEA_ADMIN_PASSWORD:-gitea123}
       Gitea__Repo: ${GITEA_REPO:-director-mesh-configs}

@@ -2,7 +2,7 @@ namespace DirectorMesh.SiteAgent.Services;
 
 public class GiteaOptions
 {
-    public string BaseUrl { get; set; } = "http://gitea:3000";
+    public string BaseUrl { get; set; } = "http://192.168.1.118"; // "http://gitea:3000";
     public string Username { get; set; } = "gitea";
     public string Password { get; set; } = string.Empty;
     public string Repo { get; set; } = "director-mesh-configs";
@@ -15,6 +15,6 @@ public class GiteaOptions
     public string? RepoUrl { get; set; }
 
     public string EffectiveOwner => string.IsNullOrEmpty(Owner) ? Username : Owner;
-    public string EffectiveRepoUrl =>
-        RepoUrl ?? $"{BaseUrl.TrimEnd('/')}/{EffectiveOwner}/{Repo}.git";
+    public string EffectiveRepoUrl =>   $"{BaseUrl.TrimEnd('/')}/{EffectiveOwner}/{Repo}.git";
+//        RepoUrl ?? $"{BaseUrl.TrimEnd('/')}/{EffectiveOwner}/{Repo}.git";
 }

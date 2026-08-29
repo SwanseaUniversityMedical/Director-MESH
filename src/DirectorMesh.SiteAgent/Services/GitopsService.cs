@@ -17,6 +17,7 @@ public class GitopsService(GiteaClient gitea, GiteaOptions options, ILogger<Gito
         var siteSlug = Slug(config.SiteName);
         var dpSlug = Slug(config.DataPlaneName);
         var repoUrl = options.EffectiveRepoUrl;
+
         var commitMsg = $"Director-MESH: {config.SiteName}/{config.DataPlaneName} v{config.Version}";
 
         logger.LogInformation("Pushing config {Site}/{DP} v{Version} to Gitea",
@@ -35,9 +36,9 @@ public class GitopsService(GiteaClient gitea, GiteaOptions options, ILogger<Gito
             appYaml, commitMsg, ct);
 
         var appOfAppsYaml = ArgoManifestBuilder.BuildAppOfApps(
-            config.SiteName, repoUrl, $"apps/{siteSlug}");
+            config.SiteName, repoUrl, $"apps");
         await gitea.CommitFileAsync(
-            $"apps/{siteSlug}/app-of-apps.yaml",
+            $"apps/app-of-apps.yaml",
             appOfAppsYaml, commitMsg, ct);
     }
 

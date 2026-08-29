@@ -37,7 +37,7 @@ spec:
   source:
     repoURL: {repoUrl}
     targetRevision: HEAD
-    path: {appsPath}
+    path: {appsPath}/{Slug(siteName)}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
