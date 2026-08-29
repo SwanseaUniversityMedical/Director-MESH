@@ -1,6 +1,7 @@
 using DirectorMesh.Web.Data;
 using DirectorMesh.Web.Models.Domain;
 using DirectorMesh.Web.Models.ViewModels;
+using DirectorMesh.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DirectorMesh.Web.Controllers;
 
 [Authorize]
-public class NetworkServicesController(ApplicationDbContext db) : Controller
+public class NetworkServicesController(ApplicationDbContext db, INetBirdService netBirdService) : Controller
 {
     public async Task<IActionResult> Index(int? siteId)
     {
@@ -136,6 +137,41 @@ public class NetworkServicesController(ApplicationDbContext db) : Controller
             TempData["Success"] = "Service deleted.";
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateNetBirdPeer(int id, int dataPlaneId)
+    {
+        var svc = await db.NetworkServices
+            .Include(s => s.Site).ThenInclude(s => s.DataPlanes)
+            .FirstOrDefaultAsync(s => s.Id == id);
+        if (svc == null) return NotFound();
+
+        var dataPlane = svc.Site.DataPlanes.FirstOrDefault(dp => dp.Id == dataPlaneId);
+        if (dataPlane == null)
+        {
+            TempData["Error"] = "Select a valid data plane for this site.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        if (string.IsNullOrWhiteSpace(dataPlane.NetBirdNetworkId))
+        {
+            TempData["Error"] = $"Data plane '{dataPlane.Name}' has no NetBird Network ID configured.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var peerName = $"{dataPlane.NetBirdNetworkId}-{svc.Name}";
+        var setupKey = await netBirdService.CreateSetupKeyAsync(peerName);
+        if (setupKey == null)
+        {
+            TempData["Error"] = "Failed to create the NetBird setup key. Check the NetBird settings and logs.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        svc.NetBirdPeerName = peerName;
+        svc.NetBirdSetupKey = setupKey;
+        await db.SaveChangesAsync();
+        TempData["Success"] = $"NetBird setup key created for peer '{peerName}'.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     private async Task PopulateSites(NetworkServiceCreateEditViewModel vm)

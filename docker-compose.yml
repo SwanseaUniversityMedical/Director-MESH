@@ -71,8 +71,8 @@ services:
       Keycloak__ClientId: director-mesh-web
       Keycloak__ClientSecret: director-mesh-secret
       NetBird__ApiBase: https://api.netbird.io/api
-      NetBird__ApiToken: ""
-      NetBird__DnsDomain: ""
+      NetBird__ApiToken: "nbp_Ou98xpam55WwhLpxwKT9U7yi7J6Ubf4QH1qQ"
+      NetBird__DnsDomain: "netbird.com"
     depends_on:
       postgres:
         condition: service_healthy

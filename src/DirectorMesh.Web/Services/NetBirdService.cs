@@ -81,4 +81,33 @@ public class NetBirdService(IHttpClientFactory httpClientFactory, INetBirdSettin
             return false;
         }
     }
+
+    public async Task<string?> CreateSetupKeyAsync(string name, CancellationToken ct = default)
+    {
+        try
+        {
+            var settings = await settingsResolver.ResolveAsync(ct);
+            var client = httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", settings.ApiToken);
+            var body = JsonSerializer.Serialize(new
+            {
+                name,
+                type = "reusable",
+                expires_in = 31536000,
+                revoked = false,
+                usage_limit = 0
+            });
+            var response = await client.PostAsync($"{settings.ApiBase}/setup-keys",
+                new StringContent(body, Encoding.UTF8, "application/json"), ct);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var doc = JsonDocument.Parse(json);
+            return doc.RootElement.GetProperty("key").GetString();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create NetBird setup key {Name}", name);
+            return null;
+        }
+    }
 }

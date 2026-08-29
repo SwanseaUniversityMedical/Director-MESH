@@ -4,6 +4,24 @@
 }
 
 @section TopbarActions {
+    <form asp-action="CreateNetBirdPeer" asp-route-id="@Model.Id" method="post" class="d-inline-flex align-items-center gap-2 me-2">
+        @if (Model.Site.DataPlanes.Count > 1)
+        {
+            <select name="dataPlaneId" class="form-select form-select-sm" style="width: auto;" required>
+                @foreach (var dp in Model.Site.DataPlanes)
+                {
+                    <option value="@dp.Id">@dp.Name</option>
+                }
+            </select>
+        }
+        else
+        {
+            <input type="hidden" name="dataPlaneId" value="@Model.Site.DataPlanes.FirstOrDefault()?.Id" />
+        }
+        <button type="submit" class="btn btn-outline-primary btn-sm" @(!Model.Site.DataPlanes.Any() ? "disabled" : "")>
+            <i class="bi bi-diagram-3 me-1"></i>Create NetBird Peer
+        </button>
+    </form>
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-pencil me-1"></i>Edit
     </a>
