@@ -15,8 +15,8 @@ public class ConfigurationGeneratorService(
         var dataPlaneServices = site.Services.Where(s => s.DataPlaneId == dataPlane.Id).ToList();
         var managementUrl = configuration["NetBird:ManagementUrl"] ?? "https://api.netbird.io";
         var signalUrl = configuration["NetBird:SignalUrl"] ?? "https://signal.netbird.io";
-        var namespaceName = $"director-mesh-{Slug(site.Name)}";
-
+        var namespaceName = $"dm-{Slug(site.Name)}-{Slug(dataPlane.Name)}";
+ 
         var configObj = new
         {
             siteId = site.Id,

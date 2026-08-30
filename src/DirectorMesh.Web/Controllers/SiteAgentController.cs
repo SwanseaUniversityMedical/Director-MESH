@@ -27,20 +27,23 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
         var result = new List<DataPlaneConfigResponse>();
         foreach (var dp in site.DataPlanes.OrderBy(dp => dp.Name))
         {
+            var lastDecision = await db.SiteConfigurations
+                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id &&
+                            (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Rejected))
+                .OrderByDescending(c => c.Version)
+                .FirstOrDefaultAsync();
+
+            // A Sent config left over from before a later version was decided is stale —
+            // it must not be offered for review/approval once superseded.
             var pending = await db.SiteConfigurations
-                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id && c.Status == ConfigurationStatus.Sent)
+                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id && c.Status == ConfigurationStatus.Sent &&
+                            (lastDecision == null || c.Version > lastDecision.Version))
                 .OrderByDescending(c => c.Version)
                 .FirstOrDefaultAsync();
 
             var lastApplied = await db.SiteConfigurations
                 .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id &&
                             (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Applied))
-                .OrderByDescending(c => c.Version)
-                .FirstOrDefaultAsync();
-
-            var lastDecision = await db.SiteConfigurations
-                .Where(c => c.SiteId == siteId && c.DataPlaneId == dp.Id &&
-                            (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Rejected))
                 .OrderByDescending(c => c.Version)
                 .FirstOrDefaultAsync();
 
@@ -69,6 +72,8 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
         if (config == null) return NotFound();
         if (config.Status != ConfigurationStatus.Sent)
             return BadRequest(new { error = "Config is not in Sent status." });
+        if (await IsSuperseded(siteId, config))
+            return BadRequest(new { error = "This configuration has been superseded by a later version." });
 
         config.Status = ConfigurationStatus.Approved;
         config.ApprovedAt = DateTime.UtcNow;
@@ -93,6 +98,8 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
         if (config == null) return NotFound();
         if (config.Status != ConfigurationStatus.Sent)
             return BadRequest(new { error = "Config is not in Sent status." });
+        if (await IsSuperseded(siteId, config))
+            return BadRequest(new { error = "This configuration has been superseded by a later version." });
 
         config.Status = ConfigurationStatus.Rejected;
         config.RejectionReason = body.Reason;
@@ -100,6 +107,11 @@ public class SiteAgentController(ApplicationDbContext db) : ControllerBase
 
         return Ok(new { message = "Configuration rejected." });
     }
+
+    private async Task<bool> IsSuperseded(int siteId, SiteConfiguration config) =>
+        await db.SiteConfigurations.AnyAsync(c =>
+            c.SiteId == siteId && c.DataPlaneId == config.DataPlaneId && c.Version > config.Version &&
+            (c.Status == ConfigurationStatus.Approved || c.Status == ConfigurationStatus.Rejected));
 
     private static ConfigSummary ToSummary(SiteConfiguration c) =>
         new(c.Id, c.Version, c.Status.ToString(), c.ConfigurationJson, c.K8sManifestYaml,

@@ -16,4 +16,4 @@ $encoded = kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=
 [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($encoded))
 
 # Expose UI
-kubectl port-forward svc/argocd-server -n argocd 8080:443
+kubectl port-forward svc/argocd-server -n argocd 8088:443
