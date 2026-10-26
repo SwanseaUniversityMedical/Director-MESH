@@ -1,3 +1,4 @@
+@inject AgentSettingsStore AgentSettings
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,8 +20,15 @@
             Director-<span>MESH</span> <small class="fw-normal fs-6 text-secondary">Site Agent</small>
         </a>
         <div class="ms-auto d-flex align-items-center gap-3">
+            @if (AgentSettings.Current.IsConfigured)
+            {
+                <small class="text-secondary">Site @AgentSettings.Current.SiteId · @AgentSettings.Current.BaseUrl</small>
+            }
             <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-light">
                 <i class="bi bi-arrow-repeat me-1"></i>Refresh
+            </a>
+            <a asp-controller="Settings" asp-action="Index" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-gear me-1"></i>Settings
             </a>
         </div>
     </nav>

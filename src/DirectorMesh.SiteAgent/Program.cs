@@ -5,19 +5,22 @@ using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dmOptions = builder.Configuration.GetSection("DirectorMesh").Get<DirectorMeshOptions>()
-    ?? throw new InvalidOperationException("DirectorMesh configuration section is missing.");
+// Settings saved from the Settings screen are layered last so they override
+// appsettings and environment variables. In Docker this lives on the agent_data volume.
+var settingsPath = builder.Configuration["AgentSettingsPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "data", "agent-settings.json");
+builder.Configuration.AddJsonFile(settingsPath, optional: true, reloadOnChange: false);
+
+var dmOptions = builder.Configuration.GetSection("DirectorMesh").Get<DirectorMeshOptions>() ?? new DirectorMeshOptions();
 
 var giteaOptions = builder.Configuration.GetSection("Gitea").Get<GiteaOptions>() ?? new GiteaOptions();
 
-builder.Services.AddSingleton(dmOptions);
+builder.Services.AddSingleton(new AgentSettingsStore(dmOptions, settingsPath));
+builder.Services.AddTransient(sp => sp.GetRequiredService<AgentSettingsStore>().Current);
 builder.Services.AddSingleton(giteaOptions);
 
-builder.Services.AddHttpClient<DirectorMeshClient>(http =>
-{
-    http.BaseAddress = new Uri(dmOptions.BaseUrl.TrimEnd('/') + "/");
-    http.DefaultRequestHeaders.Add("X-Api-Key", dmOptions.ApiKey);
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+builder.Services.AddHttpClient<DirectorMeshClient>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 });

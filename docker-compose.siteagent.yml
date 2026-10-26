@@ -71,6 +71,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      # Optional initial values — the connection can also be set from the agent's
+      # Settings screen, which is saved to the agent_data volume and takes precedence.
       DirectorMesh__BaseUrl: ${DIRECTOR_MESH_URL:-https://director-mesh.example.com}
       DirectorMesh__SiteId: ${DIRECTOR_MESH_SITE:-0}
       DirectorMesh__ApiKey: ${DIRECTOR_MESH_KEY:-}
@@ -81,6 +83,7 @@ services:
       Gitea__RepoUrl: ${GITEA_REPO_URL:-}
     volumes:
       - agent_keys:/app/keys
+      - agent_data:/app/data
     depends_on:
       gitea:
         condition: service_healthy
@@ -89,3 +92,4 @@ services:
 volumes:
   gitea_data:
   agent_keys:
+  agent_data:

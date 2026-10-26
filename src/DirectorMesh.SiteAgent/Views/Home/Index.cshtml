@@ -18,7 +18,10 @@
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info">No data planes found for this site. Check your API key and Site ID configuration.</div>
+    <div class="alert alert-info">
+        No data planes found for this site. Check the API key and Site ID in
+        <a asp-controller="Settings" asp-action="Index">Settings</a>.
+    </div>
 }
 else
 {

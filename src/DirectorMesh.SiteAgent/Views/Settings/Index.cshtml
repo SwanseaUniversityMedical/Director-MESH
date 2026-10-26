@@ -1,0 +1,56 @@
+@model DirectorMesh.SiteAgent.Controllers.SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Director-MESH Connection</h5>
+</div>
+
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>@TempData["Warning"]</div>
+}
+@if (Model.TestOk == true)
+{
+    <div class="alert alert-success"><i class="bi bi-plug me-2"></i>@Model.TestMessage</div>
+}
+else if (Model.TestOk == false)
+{
+    <div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>Connection test failed: @Model.TestMessage</div>
+}
+
+<div class="card" style="max-width: 640px;">
+    <div class="card-body">
+        <p class="text-muted small">
+            Enter the Director-MESH URL, this site's ID and the site API key shown on the site's page in Director-MESH.
+            Saved settings take effect immediately and override any values supplied by environment variables.
+        </p>
+        <form asp-action="Index" method="post">
+            <div class="mb-3">
+                <label asp-for="BaseUrl" class="form-label">Director-MESH URL</label>
+                <input asp-for="BaseUrl" class="form-control" placeholder="https://director-mesh.example.com" />
+                <span asp-validation-for="BaseUrl" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="SiteId" class="form-label">Site ID</label>
+                <input asp-for="SiteId" type="number" min="1" class="form-control" />
+                <span asp-validation-for="SiteId" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ApiKey" class="form-label">Site API key</label>
+                <input asp-for="ApiKey" type="password" value="@Model.ApiKey" class="form-control" autocomplete="off"
+                       placeholder="@(Model.HasApiKey ? "•••••••• (leave blank to keep the current key)" : "Paste the site API key")" />
+                <span asp-validation-for="ApiKey" class="text-danger small"></span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" name="submit" value="test" class="btn btn-outline-secondary">
+                    <i class="bi bi-plug me-1"></i>Test connection
+                </button>
+                <button type="submit" name="submit" value="save" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

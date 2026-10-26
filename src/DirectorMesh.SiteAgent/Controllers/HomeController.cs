@@ -3,10 +3,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DirectorMesh.SiteAgent.Controllers;
 
-public class HomeController(DirectorMeshClient client, GitopsService gitops) : Controller
+public class HomeController(DirectorMeshClient client, DirectorMeshOptions options, GitopsService gitops) : Controller
 {
     public async Task<IActionResult> Index()
     {
+        if (!options.IsConfigured)
+        {
+            TempData["Warning"] = "This agent is not connected yet — enter the Director-MESH URL, Site ID and API key.";
+            return RedirectToAction("Index", "Settings");
+        }
+
         try
         {
             var configs = await client.GetConfigsAsync();
@@ -21,6 +27,7 @@ public class HomeController(DirectorMeshClient client, GitopsService gitops) : C
 
     public async Task<IActionResult> Config(int dataPlaneId)
     {
+        if (!options.IsConfigured) return RedirectToAction("Index", "Settings");
         var configs = await client.GetConfigsAsync();
         var dp = configs.FirstOrDefault(c => c.DataPlaneId == dataPlaneId);
         if (dp?.Pending == null) return RedirectToAction(nameof(Index));

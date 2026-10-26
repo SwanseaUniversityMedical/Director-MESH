@@ -3,9 +3,25 @@ using System.Text.Json;
 
 namespace DirectorMesh.SiteAgent.Services;
 
-public class DirectorMeshClient(HttpClient http, DirectorMeshOptions options)
+public class DirectorMeshClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    private readonly HttpClient http;
+    private readonly DirectorMeshOptions options;
+
+    // Connection details are applied per instance (rather than when the HttpClient is
+    // registered) so that changes made on the Settings screen take effect immediately.
+    public DirectorMeshClient(HttpClient http, DirectorMeshOptions options)
+    {
+        this.http = http;
+        this.options = options;
+        if (options.IsConfigured)
+        {
+            http.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            http.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
+        }
+    }
 
     public async Task<List<DataPlaneConfigResponse>> GetConfigsAsync(CancellationToken ct = default)
     {
